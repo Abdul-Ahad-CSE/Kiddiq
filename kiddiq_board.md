@@ -135,7 +135,7 @@ Foundation configuration, schema design, and local development setup.
 ### Phase 2: Authentication & Zustand State Management
 User credentials provider configuration and Zustand client state container setup.
 
-- [ ] **TSK-004: NextAuth.js Configuration**
+- [x] **TSK-004: NextAuth.js Configuration**
   - **Agent**: `backend-specialist`
   - **Skills**: `api-patterns`, `nodejs-best-practices`
   - **Priority**: `P1`
@@ -145,7 +145,8 @@ User credentials provider configuration and Zustand client state container setup
     - Configure NextAuth.js credentials provider to authenticate Users.
     - Expose user role (`ADMIN` or `CUSTOMER`) inside JWT and session callbacks.
     - Build login page form with React Hook Form and Zod validation.
-  - **VERIFY**: ``
+  - **VERIFY**: `NextAuth.js authentication configured successfully. Installed next-auth, react-hook-form, zod, @hookform/resolvers, and lucide-react. Created type definitions extending next-auth modules in next-auth.d.ts to include role and id properties. Implemented App Router route handler with credentials check, password hashing lookup, and role JWT callbacks. Built a premium, soft-blue styled LoginPage utilizing React Hook Form with Zod validation. Checked and validated via next build and checklist.py (All core checks passed).`
+
 
 - [ ] **TSK-005: Zustand Global Cart & Wishlist Store**
   - **Agent**: `frontend-specialist`
