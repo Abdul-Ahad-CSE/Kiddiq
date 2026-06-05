@@ -178,7 +178,7 @@ Public facing catalog, shop filters, and Framer Motion reveals.
     - Apply micro-interactions on links and buttons (subtle color shifts, hover lifts).
   - **VERIFY**: `Completed. Copied official logo to public/logo.jpg. Built responsive sticky Navbar.tsx with Zustand cart/wishlist state count badges, category dropdown, and session check props. Built dark high-trust Footer.tsx with flat categories and a direct WhatsApp link to 01825462039. Restructured NextAuth configuration to enable server-side session fetching in layout.tsx. Verified via production build, zero lint warnings, and a green master checklist.py pass.`
 
-- [ ] **TSK-007: Home Page Layout & Scroll Animations**
+- [x] **TSK-007: Home Page Layout & Scroll Animations**
   - **Agent**: `frontend-specialist`
   - **Skills**: `frontend-design`, `nextjs-react-expert`
   - **Priority**: `P2`
@@ -188,7 +188,7 @@ Public facing catalog, shop filters, and Framer Motion reveals.
     - Build premium Hero Banner with high-trust taglines ("Brain Development Made Fun").
     - Render sections: Flat Category links, Best Sellers grid, Brand Benefits, and Customer Testimonials.
     - Configure Framer Motion reveals (`whileInView`, scroll-based reveals, and soft grid glow effects).
-  - **VERIFY**: ``
+  - **VERIFY**: `Completed. Installed framer-motion and created FramerWrapper.tsx helper containing FadeIn, Float, and Stagger transition wrappers. Refactored page.tsx to query categories and featured products from PostgreSQL via Prisma. Implemented Hero banner with trust indicators, Shop by Category grid (directing to pre-filtered slugs), Best Sellers product grid using reusable ProductCard.tsx, Why Parents Choose benefits grid, and testimonials. Verified via production build, linter warnings fix, and master checklist pass.`
 
 - [ ] **TSK-008: Shop Catalog with Dynamic Filtering & Search**
   - **Agent**: `frontend-specialist`

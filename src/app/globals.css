@@ -8,9 +8,65 @@
   --color-brand-yellow: #f59e0b;
   --color-brand-yellow-dark: #d97706;
   --color-brand-yellow-light: #fef3c7;
+
+  /* Custom animations registered in Tailwind CSS v4 theme */
+  --animate-fly-loop: fly-loop 36s linear infinite;
+  --animate-helicopter-bob: helicopter-bob 2.2s ease-in-out infinite;
+  --animate-rotor-spin: rotor-spin 0.15s linear infinite;
+  --animate-main-rotor: main-rotor-spin 0.08s linear infinite;
+
+  @keyframes fly-loop {
+    0%   { transform: translate(-15vw, 5px) scaleX(1); }
+    10%  { transform: translate(10vw, -5px) scaleX(1); }
+    20%  { transform: translate(30vw, 8px) scaleX(1); }
+    30%  { transform: translate(50vw, -8px) scaleX(1); }
+    40%  { transform: translate(80vw, 4px) scaleX(1); }
+    48%  { transform: translate(115vw, -4px) scaleX(1); }
+
+    50%  { transform: translate(115vw, -4px) scaleX(-1); }
+
+    60%  { transform: translate(80vw, -10px) scaleX(-1); }
+    70%  { transform: translate(50vw, 6px) scaleX(-1); }
+    80%  { transform: translate(30vw, -6px) scaleX(-1); }
+    90%  { transform: translate(10vw, 4px) scaleX(-1); }
+    100% { transform: translate(-15vw, 5px) scaleX(1); }
+  }
+
+  @keyframes helicopter-bob {
+    0%, 100% { margin-top: 0px; }
+    25% { margin-top: -8px; }
+    50% { margin-top: 4px; }
+    75% { margin-top: -6px; }
+  }
+
+  @keyframes rotor-spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+
+  @keyframes main-rotor-spin {
+    0% { transform: scaleX(1); }
+    50% { transform: scaleX(0.08); }
+    100% { transform: scaleX(1); }
+  }
 }
 
 body {
   font-family: var(--font-sans);
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .animate-fly-loop {
+    animation: none !important;
+    transform: translate(15vw, 10px) !important;
+  }
+  .animate-helicopter-bob {
+    animation: none !important;
+  }
+  .animate-rotor-spin {
+    animation: none !important;
+  }
+  .animate-main-rotor {
+    animation: none !important;
+  }
+}
