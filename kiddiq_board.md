@@ -148,7 +148,7 @@ User credentials provider configuration and Zustand client state container setup
   - **VERIFY**: `NextAuth.js authentication configured successfully. Installed next-auth, react-hook-form, zod, @hookform/resolvers, and lucide-react. Created type definitions extending next-auth modules in next-auth.d.ts to include role and id properties. Implemented App Router route handler with credentials check, password hashing lookup, and role JWT callbacks. Built a premium, soft-blue styled LoginPage utilizing React Hook Form with Zod validation. Checked and validated via next build and checklist.py (All core checks passed).`
 
 
-- [ ] **TSK-005: Zustand Global Cart & Wishlist Store**
+- [x] **TSK-005: Zustand Global Cart & Wishlist Store**
   - **Agent**: `frontend-specialist`
   - **Skills**: `frontend-design`, `clean-code`
   - **Priority**: `P2`
@@ -158,7 +158,8 @@ User credentials provider configuration and Zustand client state container setup
     - Build a Zustand store managing a local cart list (items, quantities, price calculations).
     - Sync cart items to `localStorage` for persistence.
     - Add support for saving products to a local wishlist state.
-  - **VERIFY**: ``
+  - **VERIFY**: `Zustand store successfully built and verified. Installed zustand. Designed CartItem and CartStore interfaces supporting items, wishlist, addItem, removeItem, updateQuantity, clearCart, toggleWishlist, and isInWishlist. Configured localStorage persistence via middleware. Implemented a custom useCartState hook wrapping state transitions in a safe timer callback to completely avoid Next.js App Router hydration mismatches. Verified type safety with npx tsc, Next.js build compilation, and checklist.py (All core checks passed).`
+
 
 ---
 

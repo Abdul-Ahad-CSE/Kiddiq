@@ -111,7 +111,7 @@ async function main() {
     create: { name: 'Chattogram City', deliveryCharge: 60, isActive: true },
   });
 
-  const outZone = await prisma.deliveryZone.upsert({
+  await prisma.deliveryZone.upsert({
     where: { name: 'Outside Chattogram' },
     update: { deliveryCharge: 120, isActive: true },
     create: { name: 'Outside Chattogram', deliveryCharge: 120, isActive: true },
