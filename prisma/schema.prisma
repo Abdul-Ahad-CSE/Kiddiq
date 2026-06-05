@@ -1,0 +1,156 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  ADMIN
+  CUSTOMER
+}
+
+enum VerificationStatus {
+  pending
+  verified
+  rejected
+}
+
+enum OrderStatus {
+  pending_verification
+  confirmed
+  processing
+  shipped
+  delivered
+  cancelled
+}
+
+model User {
+  id        String     @id @default(uuid())
+  name      String
+  email     String     @unique
+  password  String
+  role      Role       @default(CUSTOMER)
+  orders    Order[]
+  reviews   Review[]
+  wishlist  Wishlist[]
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+}
+
+model Category {
+  id        String    @id @default(uuid())
+  name      String    @unique
+  slug      String    @unique
+  image     String
+  products  Product[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+model Product {
+  id          String     @id @default(uuid())
+  title       String
+  slug        String     @unique
+  description String
+  price       Float
+  categoryId  String
+  category    Category   @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  ageGroup    String
+  images      Json       // Array of image URLs (JSON array)
+  stock       Int
+  benefits    String     // Bullet points or description of benefits
+  featured    Boolean    @default(false)
+  reviews     Review[]
+  wishlist    Wishlist[]
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+}
+
+model DeliveryZone {
+  id             String         @id @default(uuid())
+  name           String         @unique
+  deliveryCharge Float
+  isActive       Boolean        @default(true)
+  areas          DeliveryArea[]
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+}
+
+model DeliveryArea {
+  id        String       @id @default(uuid())
+  name      String
+  district  String
+  zoneId    String
+  zone      DeliveryZone @relation(fields: [zoneId], references: [id], onDelete: Cascade)
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  @@unique([name, district])
+}
+
+model Order {
+  id                  String             @id @default(uuid())
+  userId              String?
+  user                User?              @relation(fields: [userId], references: [id], onDelete: SetNull)
+  
+  // Customer Data
+  customerName        String
+  phone               String
+  email               String?
+  
+  // Shipping Data
+  district            String
+  area                String
+  fullAddress         String
+  
+  // Order Data
+  items               Json               // JSON array of items (id, title, price, quantity)
+  subtotal            Float
+  deliveryCharge      Float
+  
+  // Payment Data
+  paymentOption       String             // "COD" or "FULL_ADVANCE"
+  paymentMethod       String             // "bKash" or "Nagad"
+  amountPaid          Float
+  amountDueOnDelivery Float
+  senderNumber        String
+  transactionId       String             @unique
+  
+  // Status & Meta
+  verificationStatus  VerificationStatus @default(pending)
+  orderStatus         OrderStatus        @default(pending_verification)
+  adminNotes          String?
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
+}
+
+model Review {
+  id        String   @id @default(uuid())
+  rating    Int
+  comment   String
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, productId])
+}
+
+model Wishlist {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, productId])
+}

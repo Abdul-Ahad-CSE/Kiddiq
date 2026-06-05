@@ -1,0 +1,351 @@
+# Kiddiq E-Commerce & Order Management Platform - Project Board
+
+This project board outlines the complete development lifecycle for **Kiddiq**, a premium children's brain development store. It spans database design, user authentication, customer storefront pages, dynamic local payment & checkout processing, and an admin dashboard.
+
+---
+
+## 📋 Overview
+- **Project Name**: Kiddiq
+- **Project Type**: WEB (Next.js, React, TypeScript)
+- **Primary Agent**: `frontend-specialist` (collaboration with `backend-specialist` & `database-architect`)
+- **Key Target**: Dynamic local payment checkout (bKash/Nagad), dynamic delivery charge, WhatsApp support integration, flat category architecture, and an admin verification system.
+
+---
+
+## ⚙️ Development Guidelines
+1. **Task Planning**: When starting any task, the agent must always create a detailed, described plan of that single task first.
+2. **Git Workflow**: The user will manage the git repository, updates, and pushes to remote manually. The agent should focus purely on local code edits and updates.
+
+---
+
+
+## 🎯 Success Criteria
+1. Fully functional storefront with flat category navigation (Educational Toys, School Supplies, Parenting Resources).
+2. Dynamic local delivery charge updating in real-time (60 BDT for Chittagong City, 120 BDT elsewhere) without external API dependencies.
+3. Hybrid checkout model (COD with delivery charge paid in advance OR full advance payment) integrated with manual bKash/Nagad tracking.
+4. Prefilled WhatsApp order confirmation payload based on form input.
+5. Admin dashboard for order verification, metrics display, search/filter, and order state transition (pending to delivered).
+6. Compliance with "Purple Ban" (no violet or purple hex codes in the styling).
+7. Clean typescript compilation, passing lint rules, and green check results on `verify_all.py` / `checklist.py`.
+
+---
+
+## 🛠️ Tech Stack
+- **Framework**: Next.js 14/15 (App Router), React 18/19, TypeScript
+- **Styling**: Tailwind CSS, Lucide Icons, Framer Motion (for smooth micro-animations)
+- **State & Forms**: Zustand (Cart & Wishlist), React Hook Form, Zod
+- **Database & Auth**: PostgreSQL (Neon DB), Prisma ORM, NextAuth.js
+- **Media & Uploads**: Cloudinary (or local fallback mocks)
+
+---
+
+## 📁 Proposed File Structure
+```plaintext
+kiddiq/
+├── .agents/                    # Agent configuration and validation tools
+├── prisma/
+│   ├── schema.prisma           # Relational model layout
+│   └── seed.ts                 # Database seeding (categories, zones, mock products)
+├── src/
+│   ├── app/
+│   │   ├── layout.tsx          # Root layout (Google Font: Inter/Outfit)
+│   │   ├── page.tsx            # Home page (Hero, featured items, benefits)
+│   │   ├── shop/
+│   │   │   └── page.tsx        # Product list grid with filters
+│   │   ├── product/[slug]/
+│   │   │   └── page.tsx        # Details page, image carousel, benefits
+│   │   ├── checkout/
+│   │   │   └── page.tsx        # Dynamic manual verify checkout page
+│   │   ├── order-status/
+│   │   │   └── [id]/page.tsx   # Visual success/failure screens
+│   │   ├── admin/
+│   │   │   ├── page.tsx        # Dashboard metrics overview
+│   │   │   └── orders/
+│   │   │       └── page.tsx    # Interactive order management grid
+│   │   ├── login/
+│   │   │   └── page.tsx        # Authentication login page
+│   │   └── api/
+│   │       └── auth/[...nextauth]/route.ts # NextAuth handlers
+│   ├── components/
+│   │   ├── ui/                 # Reusable UI primitives (Button, Input, Card)
+│   │   ├── ProductCard.tsx
+│   │   ├── Navbar.tsx
+│   │   ├── Footer.tsx
+│   │   └── FramerWrapper.tsx   # Wrapper for motion components
+│   ├── lib/
+│   │   ├── db.ts               # Prisma client singleton
+│   │   ├── prisma-utils.ts     # DB helper functions
+│   │   └── validation.ts       # Zod validation schemas
+│   ├── store/
+│   │   └── useCartStore.ts     # Zustand store for shopping cart & wishlist
+│   └── styles/
+│       └── globals.css         # Styling system & Tailwind configurations
+```
+
+---
+
+## 📝 Sequential Task Breakdown
+
+### Phase 1: Database & Foundation Setup
+Foundation configuration, schema design, and local development setup.
+
+- [x] **TSK-001: Next.js Boilerplate Scaffolding**
+  - **Agent**: `frontend-specialist`
+  - **Skills**: `app-builder`, `clean-code`
+  - **Priority**: `P1`
+  - **Dependencies**: `None`
+  - **INPUT**: `None`
+  - **OUTPUT**: `package.json`, `tsconfig.json`, `tailwind.config.ts`, `src/app/layout.tsx`, `src/styles/globals.css`, `src/lib/upload.ts`
+    - Scaffold Next.js project with App Router, TypeScript, and Tailwind CSS.
+    - Set up modern typography (e.g., Google Font "Outfit" or "Inter") in `src/app/layout.tsx`.
+    - Apply base design token configuration in `globals.css` with soft blues and warm yellow accents. Avoid purple/violet completely.
+    - Create an abstracted `uploadMedia(file)` utility in `src/lib/upload.ts` that saves files locally to `/public/uploads/` as a fallback-first architecture (can be swapped for Cloudinary later without changing other components).
+  - **VERIFY**: `Boilerplate successfully scaffolded using Next.js 16.2.7 App Router and Tailwind v4. Google Font Outfit has been integrated in layout.tsx. Design colors configured in globals.css (no violet/purple found). Abstracted media upload Server Action created. Verified via npm run build (Success) and checklist.py (All 6 core checks passed).`
+
+
+- [x] **TSK-002: Prisma Schema Configuration**
+  - **Agent**: `database-architect`
+  - **Skills**: `database-design`
+  - **Priority**: `P1`
+  - **Dependencies**: `TSK-001`
+  - **INPUT**: `package.json`
+  - **OUTPUT**: `prisma/schema.prisma`, `src/lib/db.ts`
+    - Define PostgreSQL connection structure using Prisma.
+    - Build models: `User` (roles: ADMIN, CUSTOMER), `Category` (flat layout: name, slug, image), `Product` (title, slug, price, ageGroup, images JSON, stock, benefits string, featured boolean), `DeliveryZone` & `DeliveryArea` (enforcing unique name/district), `Order`, `Review`, `Wishlist`.
+    - Set up enums for `verificationStatus` (pending, verified, rejected) and `orderStatus` (pending_verification, confirmed, processing, shipped, delivered, cancelled).
+  - **VERIFY**: `Prisma schema successfully designed and verified. Installed Prisma & Client (v7.8.0). Database connection configured via prisma.config.ts and local .env file. Models for User, Category, Product, DeliveryZone, DeliveryArea, Order, Review, and Wishlist created. Verified schema structure via npx prisma validate, generated client types via npx prisma generate, and tested compilation with npx tsc --noEmit and next build. Checked and validated via checklist.py.`
+
+
+- [ ] **TSK-003: DB Seeding with Predefined Areas & Mock Data**
+  - **Agent**: `database-architect`
+  - **Skills**: `database-design`
+  - **Priority**: `P1`
+  - **Dependencies**: `TSK-002`
+  - **INPUT**: `prisma/schema.prisma`
+  - **OUTPUT**: `prisma/seed.ts`
+    - Write a seed file to populate flat categories (`Educational Toys`, `School Supplies`, `Parenting Resources`).
+    - Seed `DeliveryZone` and `DeliveryArea` utilizing the Chittagong City Areas listed in the specification.
+    - Add mock products with distinct age groups and benefits to test shop layouts.
+    - Seed the first Admin account using credentials retrieved from the environment variables `ADMIN_EMAIL` and `ADMIN_PASSWORD` (defaulting to safe mocks for local dev if not present).
+  - **VERIFY**: ``
+
+---
+
+### Phase 2: Authentication & Zustand State Management
+User credentials provider configuration and Zustand client state container setup.
+
+- [ ] **TSK-004: NextAuth.js Configuration**
+  - **Agent**: `backend-specialist`
+  - **Skills**: `api-patterns`, `nodejs-best-practices`
+  - **Priority**: `P1`
+  - **Dependencies**: `TSK-002`
+  - **INPUT**: `src/lib/db.ts`, `prisma/schema.prisma`
+  - **OUTPUT**: `src/app/api/auth/[...nextauth]/route.ts`, `src/app/login/page.tsx`
+    - Configure NextAuth.js credentials provider to authenticate Users.
+    - Expose user role (`ADMIN` or `CUSTOMER`) inside JWT and session callbacks.
+    - Build login page form with React Hook Form and Zod validation.
+  - **VERIFY**: ``
+
+- [ ] **TSK-005: Zustand Global Cart & Wishlist Store**
+  - **Agent**: `frontend-specialist`
+  - **Skills**: `frontend-design`, `clean-code`
+  - **Priority**: `P2`
+  - **Dependencies**: `TSK-001`
+  - **INPUT**: `src/app/layout.tsx`
+  - **OUTPUT**: `src/store/useCartStore.ts`
+    - Build a Zustand store managing a local cart list (items, quantities, price calculations).
+    - Sync cart items to `localStorage` for persistence.
+    - Add support for saving products to a local wishlist state.
+  - **VERIFY**: ``
+
+---
+
+### Phase 3: Storefront UI (Product Catalog & Animation)
+Public facing catalog, shop filters, and Framer Motion reveals.
+
+- [ ] **TSK-006: Navigation Shell (Navbar & Footer)**
+  - **Agent**: `frontend-specialist`
+  - **Skills**: `frontend-design`
+  - **Priority**: `P2`
+  - **Dependencies**: `TSK-005`
+  - **INPUT**: `src/app/layout.tsx`
+  - **OUTPUT**: `src/components/Navbar.tsx`, `src/components/Footer.tsx`
+    - Design a premium, child-friendly yet highly professional header and footer.
+    - Include links to Shop, Home, Cart indicator (badge count), and User Profile / Admin login link.
+    - Apply micro-interactions on links and buttons (subtle color shifts, hover lifts).
+  - **VERIFY**: ``
+
+- [ ] **TSK-007: Home Page Layout & Scroll Animations**
+  - **Agent**: `frontend-specialist`
+  - **Skills**: `frontend-design`, `nextjs-react-expert`
+  - **Priority**: `P2`
+  - **Dependencies**: `TSK-006`
+  - **INPUT**: `src/app/page.tsx`
+  - **OUTPUT**: `src/app/page.tsx`, `src/components/FramerWrapper.tsx`
+    - Build premium Hero Banner with high-trust taglines ("Brain Development Made Fun").
+    - Render sections: Flat Category links, Best Sellers grid, Brand Benefits, and Customer Testimonials.
+    - Configure Framer Motion reveals (`whileInView`, scroll-based reveals, and soft grid glow effects).
+  - **VERIFY**: ``
+
+- [ ] **TSK-008: Shop Catalog with Dynamic Filtering & Search**
+  - **Agent**: `frontend-specialist`
+  - **Skills**: `frontend-design`, `nextjs-react-expert`
+  - **Priority**: `P2`
+  - **Dependencies**: `TSK-007`
+  - **INPUT**: `src/app/shop/page.tsx`
+  - **OUTPUT**: `src/app/shop/page.tsx`, `src/components/ProductCard.tsx`
+    - Display product cards in a responsive grid.
+    - Build a sidebar with filtering: Price range slider, Age-group multi-select, and search input.
+    - Highlight navigation across flat categories (All, Educational Toys, School Supplies, Parenting Resources).
+  - **VERIFY**: ``
+
+- [ ] **TSK-009: Product Details view & Image Carousel**
+  - **Agent**: `frontend-specialist`
+  - **Skills**: `frontend-design`
+  - **Priority**: `P2`
+  - **Dependencies**: `TSK-008`
+  - **INPUT**: `src/app/product/[slug]/page.tsx`
+  - **OUTPUT**: `src/app/product/[slug]/page.tsx`
+    - Design details layout with image carousel.
+    - List features: age group tags, stock status, educational benefits bullet points.
+    - Add CTA buttons: "Add to Cart" and "Add to Wishlist".
+    - Display related products section.
+  - **VERIFY**: ``
+
+---
+
+### Phase 4: Dynamic Checkout & Local Payment Workflow
+Custom shipping calculations, hybrid payment logic, and WhatsApp prefill integration.
+
+- [ ] **TSK-010: Form Setup & Instant Delivery Logic**
+  - **Agent**: `frontend-specialist`
+  - **Skills**: `frontend-design`, `clean-code`
+  - **Priority**: `P1`
+  - **Dependencies**: `TSK-005`
+  - **INPUT**: `src/store/useCartStore.ts`
+  - **OUTPUT**: `src/app/checkout/page.tsx`, `src/lib/validation.ts`
+    - Create Zod shipping details schema (enforce phone number format, district, and area).
+    - Embed District select dropdown and Area select dropdown.
+    - Implement instant calculation logic: If District matches `Chattogram` and Area exists in `chittagongCityAreas` list, `deliveryCharge = 60 BDT`, else `120 BDT`.
+    - Update delivery fee instantly in the Order Summary when dropdown selections change.
+  - **VERIFY**: ``
+
+- [ ] **TSK-011: Hybrid Payment & manual verification UI**
+  - **Agent**: `frontend-specialist`
+  - **Skills**: `frontend-design`
+  - **Priority**: `P1`
+  - **Dependencies**: `TSK-010`
+  - **INPUT**: `src/app/checkout/page.tsx`
+  - **OUTPUT**: `src/app/checkout/page.tsx`
+    - Add checkout selection buttons for:
+      - Option 1: Delivery Charge Advance + COD (Paid Now = Delivery fee, Due on Delivery = Subtotal).
+      - Option 2: Full Advance Payment (Paid Now = Subtotal + Delivery fee, Due on Delivery = 0).
+    - Render Payment Instructions Card displaying personal numbers (bKash/Nagad) and send-money steps.
+    - Append form fields for: Payment Method (bKash/Nagad), Sender Mobile Number, Transaction ID (verify format).
+  - **VERIFY**: ``
+
+- [ ] **TSK-012: Order Submission Action & WhatsApp Integration**
+  - **Agent**: `backend-specialist`
+  - **Skills**: `api-patterns`
+  - **Priority**: `P1`
+  - **Dependencies**: `TSK-011`
+  - **INPUT**: `src/app/checkout/page.tsx`
+  - **OUTPUT**: `src/app/checkout/page.tsx`, `src/app/actions/order.ts`
+    - Build Next.js Server Action to insert orders into PostgreSQL via Prisma.
+    - Generate unique transaction verification logic to prevent duplicates.
+    - Implement a floating/prominent WhatsApp Support button prefilled with the completed form state (Name, Phone, Order Total, Payment Method, Transaction ID) using `wa.me` API.
+  - **VERIFY**: ``
+
+- [ ] **TSK-013: Success/Failure Post-Checkout Landing Screens**
+  - **Agent**: `frontend-specialist`
+  - **Skills**: `frontend-design`
+  - **Priority**: `P2`
+  - **Dependencies**: `TSK-012`
+  - **INPUT**: `src/app/actions/order.ts`
+  - **OUTPUT**: `src/app/order-status/[id]/page.tsx`
+    - Build high-trust status pages.
+    - Success (verified / pending): Show Order ID, items breakdown, payment details, and dynamic instructions.
+    - Failure / Rejected: Display details of rejected status with instructions on how to retry or contact support.
+  - **VERIFY**: ``
+
+---
+
+### Phase 5: Admin Dashboard & Order Verification Panel
+Back-office order grid, sales analytics, and order mutations.
+
+- [ ] **TSK-014: Admin Analytics & Metrics Dashboard**
+  - **Agent**: `frontend-specialist`
+  - **Skills**: `frontend-design`, `nextjs-react-expert`
+  - **Priority**: `P2`
+  - **Dependencies**: `TSK-004`
+  - **INPUT**: `src/lib/db.ts`
+  - **OUTPUT**: `src/app/admin/page.tsx`
+    - Design a high-fidelity analytics panel accessible only by `ADMIN` users.
+    - Display KPI cards: Total Sales (BDT), Active Orders, Total Registered Customers, and graphical charts for revenue stats.
+  - **VERIFY**: ``
+
+- [ ] **TSK-015: Interactive Orders Data Grid & Search Filters**
+  - **Agent**: `backend-specialist`
+  - **Skills**: `api-patterns`, `database-design`
+  - **Priority**: `P2`
+  - **Dependencies**: `TSK-014`
+  - **INPUT**: `src/app/admin/page.tsx`
+  - **OUTPUT**: `src/app/admin/orders/page.tsx`
+    - Display all orders in a paginated list layout.
+    - Implement real-time filters: Verification Status (`pending`, `verified`, `rejected`) and Order Status.
+    - Implement text search by Customer Name, Phone Number, or Transaction ID.
+  - **VERIFY**: ``
+
+- [ ] **TSK-016: Order Status Mutations (Server Actions)**
+  - **Agent**: `backend-specialist`
+  - **Skills**: `api-patterns`
+  - **Priority**: `P2`
+  - **Dependencies**: `TSK-015`
+  - **INPUT**: `src/app/admin/orders/page.tsx`
+  - **OUTPUT**: `src/app/admin/orders/page.tsx`, `src/app/actions/admin-orders.ts`
+    - Write action mutations to Verify/Reject manual payments.
+      - Verification triggers `verificationStatus: verified` and `orderStatus: confirmed`.
+      - Rejection triggers `verificationStatus: rejected` and `orderStatus: pending_verification`.
+    - Provide status progression trigger: Processing -> Shipped -> Delivered -> Cancelled.
+  - **VERIFY**: ``
+
+---
+
+### Phase 6: System Verification & Polish
+Linting, E2E testing, and UX audits.
+
+- [ ] **TSK-017: SEO Optimization & Metadata Integration**
+  - **Agent**: `seo-specialist`
+  - **Skills**: `seo-fundamentals`
+  - **Priority**: `P3`
+  - **Dependencies**: `TSK-009`
+  - **INPUT**: `src/app/layout.tsx`
+  - **OUTPUT**: `src/app/layout.tsx`, `src/app/shop/page.tsx`
+    - Implement Open Graph and Twitter Card tags.
+    - Set up descriptive title tags and meta descriptions for pages.
+    - Ensure a single `<h1>` heading layout exists on each page.
+  - **VERIFY**: ``
+
+- [ ] **TSK-018: Checklist & Master Validations**
+  - **Agent**: `performance-optimizer`
+  - **Skills**: `performance-profiling`, `webapp-testing`
+  - **Priority**: `P3`
+  - **Dependencies**: `All prior tasks`
+  - **INPUT**: `All codebase files`
+  - **OUTPUT**: `None (reports only)`
+    - Execute standard validator commands:
+      ```powershell
+      python .agents/scripts/checklist.py .
+      ```
+    - Check accessibility contrast ratios, touch target margins, and confirm the absolute ban of purple/violet hex codes has been strictly followed.
+  - **VERIFY**: ``
+
+---
+
+## 🏁 Phase X: Final Validation Checklist
+Before launching deployment or completing the project workspace, verify the list of compliance criteria:
+- [ ] No purple or violet color definitions inside styles (e.g. classes matching `purple`, `violet`, `indigo` or custom hex values).
+- [ ] Clean build via `npm run build` without typescript compiler errors.
+- [ ] Zod schema verification for transaction IDs and phone format inputs.
+- [ ] Instant delivery calculations tested for Chittagong City Areas (60 BDT) vs Others (120 BDT).
+- [ ] WhatsApp message payload links successfully format shipping data.

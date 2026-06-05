@@ -1,0 +1,16 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: var(--font-outfit), ui-sans-serif, system-ui, sans-serif;
+  --color-brand-blue: #0f4c81;
+  --color-brand-blue-dark: #072e50;
+  --color-brand-blue-light: #e6f0fa;
+  --color-brand-yellow: #f59e0b;
+  --color-brand-yellow-dark: #d97706;
+  --color-brand-yellow-light: #fef3c7;
+}
+
+body {
+  font-family: var(--font-sans);
+}
+
