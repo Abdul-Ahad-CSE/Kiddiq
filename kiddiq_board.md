@@ -166,7 +166,7 @@ User credentials provider configuration and Zustand client state container setup
 ### Phase 3: Storefront UI (Product Catalog & Animation)
 Public facing catalog, shop filters, and Framer Motion reveals.
 
-- [ ] **TSK-006: Navigation Shell (Navbar & Footer)**
+- [x] **TSK-006: Navigation Shell (Navbar & Footer)**
   - **Agent**: `frontend-specialist`
   - **Skills**: `frontend-design`
   - **Priority**: `P2`
@@ -176,7 +176,7 @@ Public facing catalog, shop filters, and Framer Motion reveals.
     - Design a premium, child-friendly yet highly professional header and footer.
     - Include links to Shop, Home, Cart indicator (badge count), and User Profile / Admin login link.
     - Apply micro-interactions on links and buttons (subtle color shifts, hover lifts).
-  - **VERIFY**: ``
+  - **VERIFY**: `Completed. Copied official logo to public/logo.jpg. Built responsive sticky Navbar.tsx with Zustand cart/wishlist state count badges, category dropdown, and session check props. Built dark high-trust Footer.tsx with flat categories and a direct WhatsApp link to 01825462039. Restructured NextAuth configuration to enable server-side session fetching in layout.tsx. Verified via production build, zero lint warnings, and a green master checklist.py pass.`
 
 - [ ] **TSK-007: Home Page Layout & Scroll Animations**
   - **Agent**: `frontend-specialist`

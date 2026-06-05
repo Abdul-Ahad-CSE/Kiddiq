@@ -1,5 +1,9 @@
 import type { Metadata } from "next";
 import { Outfit } from "next/font/google";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
 import "./globals.css";
 
 const outfit = Outfit({
@@ -13,17 +17,22 @@ export const metadata: Metadata = {
   keywords: "children toys, brain development, educational toys, parenting resources, school supplies",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const session = await getServerSession(authOptions);
+
   return (
     <html lang="en" className={`${outfit.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col font-sans bg-slate-50 text-slate-800">
-        {children}
+        <div className="flex min-h-screen flex-col">
+          <Navbar session={session} />
+          <main className="flex-grow flex flex-col">{children}</main>
+          <Footer />
+        </div>
       </body>
     </html>
   );
 }
-
