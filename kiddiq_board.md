@@ -233,7 +233,7 @@ Custom shipping calculations, hybrid payment logic, and WhatsApp prefill integra
     - Update delivery fee instantly in the Order Summary when dropdown selections change.
   - **VERIFY**: `Completed. Defined Zod checkout validation schema in src/lib/validation.ts. Formulated /checkout page utilizing nextDynamic with ssr: false to avoid server/client hydration mismatches. Integrated React Hook Form and useWatch to watch district and area changes without React Compiler limitations. Implemented delivery charge calculations yielding ৳60 BDT for Chattogram City, ৳120 BDT for Chattogram Upazilas (via other area input) or other districts, and ৳0 BDT for unselected states. Cleaned up all unused imports and variables, ensuring TypeScript checks, eslint rules, and master checklist scans pass cleanly.`
 
-- [ ] **TSK-011: Hybrid Payment & manual verification UI**
+- [x] **TSK-011: Hybrid Payment & manual verification UI**
   - **Agent**: `frontend-specialist`
   - **Skills**: `frontend-design`
   - **Priority**: `P1`
@@ -245,7 +245,7 @@ Custom shipping calculations, hybrid payment logic, and WhatsApp prefill integra
       - Option 2: Full Advance Payment (Paid Now = Subtotal + Delivery fee, Due on Delivery = 0).
     - Render Payment Instructions Card displaying personal numbers (bKash/Nagad) and send-money steps.
     - Append form fields for: Payment Method (bKash/Nagad), Sender Mobile Number, Transaction ID (verify format).
-  - **VERIFY**: ``
+  - **VERIFY**: `Completed. Expanded checkout validation schema in src/lib/validation.ts to require paymentOption, paymentMethod, senderNumber, and transactionId. Implemented interactive radio option cards for split-payment plans (Advance + COD vs Full Payment), rendering dynamic cost distributions for Paid Now and Due on Delivery splits. Integrated manual payment instructions details for bKash/Nagad transfers on Personal Number 01825462039 with copy trigger. Configured payment proof verification input fields (Payment Method toggle, Sender Mobile Number, and Transaction ID) with form-validation support. Ensured full responsive layouts, touch targets >= 48px, and Purple Ban styling guidelines are met. Checked type compiles, eslint warnings, and master checklist audits passing cleanly.`
 
 - [ ] **TSK-012: Order Submission Action & WhatsApp Integration**
   - **Agent**: `backend-specialist`

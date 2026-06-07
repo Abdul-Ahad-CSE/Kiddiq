@@ -5,7 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { ShoppingBag, Info, Trash2, AlertTriangle } from "lucide-react";
+import { ShoppingBag, Trash2, AlertTriangle } from "lucide-react";
 import { useCartStore, useCartState } from "@/store/useCartStore";
 import { checkoutSchema, CheckoutFormInput } from "@/lib/validation";
 import { motion, AnimatePresence } from "framer-motion";
@@ -110,6 +110,8 @@ export default function CheckoutClient({ chattogramAreas }: CheckoutClientProps)
 
   const watchedDistrict = useWatch({ control, name: "district" });
   const watchedArea = useWatch({ control, name: "area" });
+  const watchedPaymentOption = useWatch({ control, name: "paymentOption" });
+  const watchedPaymentMethod = useWatch({ control, name: "paymentMethod" });
 
   // Subtotal Calculation
   const subtotal = useMemo(() => {
@@ -143,6 +145,24 @@ export default function CheckoutClient({ chattogramAreas }: CheckoutClientProps)
 
   // Grand Total Calculation
   const grandTotal = Math.max(0, subtotal - discount + deliveryCharge);
+
+  // Hybrid Split Calculations
+  const { paidNow, dueOnDelivery } = useMemo(() => {
+    if (!watchedPaymentOption) {
+      return { paidNow: 0, dueOnDelivery: 0 };
+    }
+    if (watchedPaymentOption === "cod") {
+      return {
+        paidNow: deliveryCharge,
+        dueOnDelivery: Math.max(0, subtotal - discount),
+      };
+    }
+    // "full"
+    return {
+      paidNow: grandTotal,
+      dueOnDelivery: 0,
+    };
+  }, [watchedPaymentOption, deliveryCharge, subtotal, discount, grandTotal]);
 
   // Area Selection Handler
   const handleAreaSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -383,18 +403,225 @@ export default function CheckoutClient({ chattogramAreas }: CheckoutClientProps)
           )}
         </div>
 
-        {/* Phase 5 Placeholder UI elements (Payment options placeholder) */}
-        <div className="border-t border-slate-100 pt-6">
-          <div className="rounded-2xl bg-slate-50 border border-slate-200/40 p-4 flex gap-3 text-slate-500">
-            <Info className="h-5 w-5 text-brand-blue shrink-0 mt-0.5" />
-            <div className="text-xs space-y-1">
-              <span className="font-extrabold text-slate-700 block">Next Steps</span>
-              <p className="leading-relaxed">
-                Form validation is active. In the next phase, we will configure order submissions, WhatsApp integrations, and local payment verification (bKash/Nagad).
-              </p>
+        {/* Payment Plan Selector */}
+        <div className="border-t border-slate-100 pt-6 space-y-4">
+          <h3 className="text-sm font-bold text-slate-700">Select Payment Option</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Option 1: COD */}
+            <label
+              className={`flex flex-col justify-between p-4 rounded-2xl border cursor-pointer transition-all duration-200 min-h-[96px] ${
+                watchedPaymentOption === "cod"
+                  ? "border-brand-blue bg-brand-blue/5 ring-1 ring-brand-blue"
+                  : "border-slate-200 hover:border-slate-300 bg-slate-50"
+              }`}
+            >
+              <input
+                type="radio"
+                value="cod"
+                {...register("paymentOption")}
+                className="sr-only"
+              />
+              <div className="flex justify-between items-start">
+                <span className="text-sm font-extrabold text-slate-800">Advance + COD</span>
+                <span className={`h-4.5 w-4.5 rounded-full border flex items-center justify-center ${
+                  watchedPaymentOption === "cod"
+                    ? "border-brand-blue bg-brand-blue"
+                    : "border-slate-300 bg-white"
+                }`}>
+                  {watchedPaymentOption === "cod" && (
+                    <span className="h-1.5 w-1.5 rounded-full bg-white" />
+                  )}
+                </span>
+              </div>
+              <div className="mt-2 text-xs text-slate-500 leading-relaxed">
+                Pay delivery charge now (৳{deliveryCharge}), pay the rest on delivery.
+              </div>
+            </label>
+
+            {/* Option 2: Full Payment */}
+            <label
+              className={`flex flex-col justify-between p-4 rounded-2xl border cursor-pointer transition-all duration-200 min-h-[96px] ${
+                watchedPaymentOption === "full"
+                  ? "border-brand-blue bg-brand-blue/5 ring-1 ring-brand-blue"
+                  : "border-slate-200 hover:border-slate-300 bg-slate-50"
+              }`}
+            >
+              <input
+                type="radio"
+                value="full"
+                {...register("paymentOption")}
+                className="sr-only"
+              />
+              <div className="flex justify-between items-start">
+                <span className="text-sm font-extrabold text-slate-800">Full Advance</span>
+                <span className={`h-4.5 w-4.5 rounded-full border flex items-center justify-center ${
+                  watchedPaymentOption === "full"
+                    ? "border-brand-blue bg-brand-blue"
+                    : "border-slate-300 bg-white"
+                }`}>
+                  {watchedPaymentOption === "full" && (
+                    <span className="h-1.5 w-1.5 rounded-full bg-white" />
+                  )}
+                </span>
+              </div>
+              <div className="mt-2 text-xs text-slate-500 leading-relaxed">
+                Pay full amount now (৳{grandTotal}) and receive your order hassle-free.
+              </div>
+            </label>
+          </div>
+          {errors.paymentOption && (
+            <p className="mt-1 text-xs font-semibold text-rose-500">{errors.paymentOption.message}</p>
+          )}
+        </div>
+
+        {/* Payment Instructions Card */}
+        {watchedPaymentOption && (
+          <div className="bg-slate-50 rounded-2xl border border-slate-200 p-5 space-y-4">
+            <div className="flex justify-between items-center border-b border-slate-200 pb-3">
+              <span className="text-xs font-extrabold text-slate-400 uppercase tracking-wider">
+                Payment Instructions
+              </span>
+              <span className="text-xs font-extrabold px-2.5 py-1 rounded-full bg-brand-blue/10 text-brand-blue">
+                Manual Transfer
+              </span>
+            </div>
+            
+            <div className="space-y-3">
+              <div className="flex justify-between items-baseline">
+                <span className="text-xs text-slate-500 font-medium">Transfer Amount:</span>
+                <span className="text-lg font-extrabold text-brand-blue-dark">
+                  ৳{paidNow}
+                </span>
+              </div>
+
+              <div className="flex justify-between items-center p-3 bg-white rounded-xl border border-slate-200/60">
+                <div>
+                  <span className="block text-[10px] text-slate-400 font-bold uppercase tracking-wide">
+                    bKash / Nagad Personal Number
+                  </span>
+                  <span className="text-sm font-extrabold text-slate-800">
+                    01825462039
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    navigator.clipboard.writeText("01825462039");
+                    alert("Payment phone number copied to clipboard!");
+                  }}
+                  className="min-h-[44px] px-3.5 rounded-lg border border-slate-200 hover:bg-slate-50 text-slate-600 font-bold text-xs transition-colors cursor-pointer"
+                >
+                  Copy Number
+                </button>
+              </div>
+
+              <div className="text-xs text-slate-600 space-y-2 pt-1">
+                <span className="font-extrabold text-slate-700 block">How to make payment:</span>
+                <ol className="list-decimal pl-4 space-y-1.5 leading-relaxed">
+                  <li>Open your bKash or Nagad mobile banking application.</li>
+                  <li>Choose the <strong className="text-slate-800">Send Money</strong> option.</li>
+                  <li>Enter our Personal Number: <strong className="text-slate-800">01825462039</strong>.</li>
+                  <li>Enter the exact amount: <strong className="text-slate-800 font-sans">৳{paidNow}</strong>.</li>
+                  <li>Complete the transaction and copy the <strong className="text-slate-800">Transaction ID (TrxID)</strong>.</li>
+                </ol>
+              </div>
             </div>
           </div>
-        </div>
+        )}
+
+        {/* Verification Proof Fields */}
+        {watchedPaymentOption && (
+          <div className="space-y-5">
+            <div>
+              <label className="text-sm font-bold text-slate-700 block mb-2">
+                Select Payment Method
+              </label>
+              <div className="grid grid-cols-2 gap-4">
+                {/* bKash Toggle Card */}
+                <label
+                  className={`flex items-center justify-center min-h-[48px] rounded-xl border cursor-pointer font-bold text-sm transition-all ${
+                    watchedPaymentMethod === "bkash"
+                      ? "border-emerald-600 bg-emerald-50/45 text-emerald-700 ring-1 ring-emerald-600"
+                      : "border-slate-200 hover:border-slate-300 bg-slate-50 text-slate-500"
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    value="bkash"
+                    {...register("paymentMethod")}
+                    className="sr-only"
+                  />
+                  bKash
+                </label>
+
+                {/* Nagad Toggle Card */}
+                <label
+                  className={`flex items-center justify-center min-h-[48px] rounded-xl border cursor-pointer font-bold text-sm transition-all ${
+                    watchedPaymentMethod === "nagad"
+                      ? "border-emerald-600 bg-emerald-50/45 text-emerald-700 ring-1 ring-emerald-600"
+                      : "border-slate-200 hover:border-slate-300 bg-slate-50 text-slate-500"
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    value="nagad"
+                    {...register("paymentMethod")}
+                    className="sr-only"
+                  />
+                  Nagad
+                </label>
+              </div>
+              {errors.paymentMethod && (
+                <p className="mt-1.5 text-xs font-semibold text-rose-500">{errors.paymentMethod.message}</p>
+              )}
+            </div>
+
+            {/* Sender Phone & Transaction ID */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Sender Phone Number */}
+              <div>
+                <label htmlFor="senderNumber" className="text-sm font-bold text-slate-700 block mb-2">
+                  Sender Mobile Number
+                </label>
+                <input
+                  id="senderNumber"
+                  type="tel"
+                  placeholder="e.g., 01825462039"
+                  {...register("senderNumber")}
+                  className={`w-full min-h-[44px] rounded-xl border px-4 text-sm bg-slate-50 focus:bg-white focus:ring-2 outline-hidden transition-all text-slate-800 ${
+                    errors.senderNumber
+                      ? "border-rose-300 focus:ring-rose-200/45 focus:border-rose-500"
+                      : "border-slate-200 focus:ring-brand-blue/20 focus:border-brand-blue"
+                  }`}
+                />
+                {errors.senderNumber && (
+                  <p className="mt-1.5 text-xs font-semibold text-rose-500">{errors.senderNumber.message}</p>
+                )}
+              </div>
+
+              {/* Transaction ID */}
+              <div>
+                <label htmlFor="transactionId" className="text-sm font-bold text-slate-700 block mb-2">
+                  Transaction ID (TrxID)
+                </label>
+                <input
+                  id="transactionId"
+                  type="text"
+                  placeholder="e.g., 8HG7F5D3"
+                  {...register("transactionId")}
+                  className={`w-full min-h-[44px] rounded-xl border px-4 text-sm bg-slate-50 focus:bg-white focus:ring-2 outline-hidden transition-all text-slate-800 uppercase ${
+                    errors.transactionId
+                      ? "border-rose-300 focus:ring-rose-200/45 focus:border-rose-500"
+                      : "border-slate-200 focus:ring-brand-blue/20 focus:border-brand-blue"
+                  }`}
+                />
+                {errors.transactionId && (
+                  <p className="mt-1.5 text-xs font-semibold text-rose-500">{errors.transactionId.message}</p>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Submit Button */}
         <button
@@ -582,6 +809,31 @@ export default function CheckoutClient({ chattogramAreas }: CheckoutClientProps)
                 ৳{grandTotal}
               </span>
             </div>
+
+            {/* Hybrid splits details */}
+            {watchedPaymentOption ? (
+              <>
+                {/* Paid Now */}
+                <div className="border-t border-slate-100 pt-3 flex items-center justify-between text-sm">
+                  <span className="font-bold text-emerald-600">Paid Now (Bkash/Nagad)</span>
+                  <span className="font-extrabold text-emerald-700">
+                    ৳{paidNow}
+                  </span>
+                </div>
+
+                {/* Due on Delivery */}
+                <div className="flex items-center justify-between text-sm">
+                  <span className="font-semibold text-slate-500">Due on Delivery</span>
+                  <span className="font-bold text-slate-800">
+                    ৳{dueOnDelivery}
+                  </span>
+                </div>
+              </>
+            ) : (
+              <div className="border-t border-slate-100 pt-3 text-center text-xs text-slate-400 font-medium italic">
+                Select a payment option to view hybrid split details
+              </div>
+            )}
           </div>
         </div>
         
