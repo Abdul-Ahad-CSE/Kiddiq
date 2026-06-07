@@ -220,7 +220,7 @@ Public facing catalog, shop filters, and Framer Motion reveals.
 ### Phase 4: Dynamic Checkout & Local Payment Workflow
 Custom shipping calculations, hybrid payment logic, and WhatsApp prefill integration.
 
-- [ ] **TSK-010: Form Setup & Instant Delivery Logic**
+- [x] **TSK-010: Form Setup & Instant Delivery Logic**
   - **Agent**: `frontend-specialist`
   - **Skills**: `frontend-design`, `clean-code`
   - **Priority**: `P1`
@@ -229,9 +229,9 @@ Custom shipping calculations, hybrid payment logic, and WhatsApp prefill integra
   - **OUTPUT**: `src/app/checkout/page.tsx`, `src/lib/validation.ts`
     - Create Zod shipping details schema (enforce phone number format, district, and area).
     - Embed District select dropdown and Area select dropdown.
-    - Implement instant calculation logic: If District matches `Chattogram` and Area exists in `chittagongCityAreas` list, `deliveryCharge = 60 BDT`, else `120 BDT`.
+    - Implement instant calculation logic: If District matches `Chattogram` and Area exists in `chattagongCityAreas` list, `deliveryCharge = 60 BDT`, else `120 BDT`.
     - Update delivery fee instantly in the Order Summary when dropdown selections change.
-  - **VERIFY**: ``
+  - **VERIFY**: `Completed. Defined Zod checkout validation schema in src/lib/validation.ts. Formulated /checkout page utilizing nextDynamic with ssr: false to avoid server/client hydration mismatches. Integrated React Hook Form and useWatch to watch district and area changes without React Compiler limitations. Implemented delivery charge calculations yielding ৳60 BDT for Chattogram City, ৳120 BDT for Chattogram Upazilas (via other area input) or other districts, and ৳0 BDT for unselected states. Cleaned up all unused imports and variables, ensuring TypeScript checks, eslint rules, and master checklist scans pass cleanly.`
 
 - [ ] **TSK-011: Hybrid Payment & manual verification UI**
   - **Agent**: `frontend-specialist`
