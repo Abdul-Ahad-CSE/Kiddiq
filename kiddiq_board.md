@@ -190,7 +190,7 @@ Public facing catalog, shop filters, and Framer Motion reveals.
     - Configure Framer Motion reveals (`whileInView`, scroll-based reveals, and soft grid glow effects).
   - **VERIFY**: `Completed. Installed framer-motion and created FramerWrapper.tsx helper containing FadeIn, Float, and Stagger transition wrappers. Refactored page.tsx to query categories and featured products from PostgreSQL via Prisma. Implemented Hero banner with trust indicators, Shop by Category grid (directing to pre-filtered slugs), Best Sellers product grid using reusable ProductCard.tsx, Why Parents Choose benefits grid, and testimonials. Verified via production build, linter warnings fix, and master checklist pass.`
 
-- [ ] **TSK-008: Shop Catalog with Dynamic Filtering & Search**
+- [x] **TSK-008: Shop Catalog with Dynamic Filtering & Search**
   - **Agent**: `frontend-specialist`
   - **Skills**: `frontend-design`, `nextjs-react-expert`
   - **Priority**: `P2`
@@ -200,7 +200,7 @@ Public facing catalog, shop filters, and Framer Motion reveals.
     - Display product cards in a responsive grid.
     - Build a sidebar with filtering: Price range slider, Age-group multi-select, and search input.
     - Highlight navigation across flat categories (All, Educational Toys, School Supplies, Parenting Resources).
-  - **VERIFY**: ``
+  - **VERIFY**: `Completed. Built SSR page fetching products and categories in parallel for SEO. Implemented client-side filtering via useMemo in ShopCatalogClient supporting instant search, price ranges, age groups, and sorting options. Integrated Next.js useSearchParams for URL sync on load and window.history.replaceState for silent URL updates. Responsive design features 2-column mobile card grid, "Search and Filter" bottom action bar triggering a half-screen bottom sheet with "See Result" confirm button, and sticky desktop left sidebar. Verified compile, lint, and master checklist audits passing cleanly.`
 
 - [ ] **TSK-009: Product Details view & Image Carousel**
   - **Agent**: `frontend-specialist`

@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { Star, Heart, ShoppingBag } from "lucide-react";
 import { useCartStore, useCartState } from "@/store/useCartStore";
 
@@ -78,12 +79,13 @@ export default function ProductCard({ product }: ProductCardProps) {
       {/* Image Container with Badges */}
       <div className="relative aspect-square w-full overflow-hidden rounded-xl bg-slate-50">
         <Link href={`/shop/${product.slug}`} className="block h-full w-full">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
+          <Image
             src={imgSrc}
             alt={product.title}
+            fill
+            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
             onError={() => setImgSrc("/logo.jpg")}
-            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+            className="object-cover transition-transform duration-500 group-hover:scale-105"
             loading="lazy"
           />
         </Link>

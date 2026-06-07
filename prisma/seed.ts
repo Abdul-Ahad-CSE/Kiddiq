@@ -166,6 +166,18 @@ async function main() {
       benefits: 'Introduces basic programming logic, sequencing, and computational thinking.',
       featured: true,
     },
+    {
+      title: 'Wooden Abacus Puzzle',
+      slug: 'wooden-abacus-puzzle',
+      description: 'A premium wooden abacus featuring colorful rings to develop counting, basic addition, and color matching skills in early childhood.',
+      price: 450.00,
+      categoryId: categoriesMap['Educational Toys'],
+      ageGroup: '3-5 Years',
+      images: ['/images/products/abacus.jpg'],
+      stock: 12,
+      benefits: 'Teaches foundational arithmetic, fine motor skills, and color sorting.',
+      featured: true,
+    },
     // School Supplies
     {
       title: 'Ergonomic Kids Backpack',
@@ -191,6 +203,18 @@ async function main() {
       benefits: 'Non-toxic, extremely easy to wash, and encourages artistic expression.',
       featured: false,
     },
+    {
+      title: 'Ergonomic Writing Pencil Grip Trainer',
+      slug: 'ergonomic-pencil-grip-trainer',
+      description: 'Soft, non-toxic silicone grip guides that help children learn the correct pencil posture and improve writing control.',
+      price: 150.00,
+      categoryId: categoriesMap['School Supplies'],
+      ageGroup: '3-6 Years',
+      images: ['/images/products/pencil-grip.jpg'],
+      stock: 50,
+      benefits: 'Prevents hand fatigue, establishes proper tripod grasp, and fits standard pencils.',
+      featured: false,
+    },
     // Parenting Resources
     {
       title: 'Positive Parenting Guidebook',
@@ -203,6 +227,30 @@ async function main() {
       stock: 12,
       benefits: 'Actionable tips for sibling harmony, emotional coaching, and positive boundary setting.',
       featured: true,
+    },
+    {
+      title: 'Child Development Milestone Tracker Journal',
+      slug: 'development-milestone-tracker',
+      description: 'A beautifully laid out physical journal to track early speech, cognitive milestones, emotional triggers, and screen-free achievements.',
+      price: 300.00,
+      categoryId: categoriesMap['Parenting Resources'],
+      ageGroup: 'Parents',
+      images: ['/images/products/tracker-journal.jpg'],
+      stock: 25,
+      benefits: 'Provides guided daily prompts, milestones charts, and space for positive memory logging.',
+      featured: true,
+    },
+    {
+      title: 'Positive Coaching Activity Cards',
+      slug: 'positive-coaching-cards',
+      description: 'A deck of 50 prompt cards for parents to turn everyday routines like clean-up, bedtime, and meals into logic-building games and connection moments.',
+      price: 200.00,
+      categoryId: categoriesMap['Parenting Resources'],
+      ageGroup: 'Parents',
+      images: ['/images/products/activity-cards.jpg'],
+      stock: 30,
+      benefits: 'Promotes screen-free engagement, positive reinforcement phrases, and cooperation through play.',
+      featured: false,
     },
   ];
 
