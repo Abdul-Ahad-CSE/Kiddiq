@@ -202,7 +202,7 @@ Public facing catalog, shop filters, and Framer Motion reveals.
     - Highlight navigation across flat categories (All, Educational Toys, School Supplies, Parenting Resources).
   - **VERIFY**: `Completed. Built SSR page fetching products and categories in parallel for SEO. Implemented client-side filtering via useMemo in ShopCatalogClient supporting instant search, price ranges, age groups, and sorting options. Integrated Next.js useSearchParams for URL sync on load and window.history.replaceState for silent URL updates. Responsive design features 2-column mobile card grid, "Search and Filter" bottom action bar triggering a half-screen bottom sheet with "See Result" confirm button, and sticky desktop left sidebar. Verified compile, lint, and master checklist audits passing cleanly.`
 
-- [ ] **TSK-009: Product Details view & Image Carousel**
+- [x] **TSK-009: Product Details view & Image Carousel**
   - **Agent**: `frontend-specialist`
   - **Skills**: `frontend-design`
   - **Priority**: `P2`
@@ -213,7 +213,7 @@ Public facing catalog, shop filters, and Framer Motion reveals.
     - List features: age group tags, stock status, educational benefits bullet points.
     - Add CTA buttons: "Add to Cart" and "Add to Wishlist".
     - Display related products section.
-  - **VERIFY**: ``
+  - **VERIFY**: `Completed. Built Server Component performing data fetching by slug, generating SEO metadata, handling notFound() state, and querying related products with featured padding. Built ProductDetailsClient component featuring Framer Motion carousel with swipe and click navigation, stock status badges, educational benefits check list parser, quantity selector, Zustand cart/wishlist sync, and direct WhatsApp order prefill message link. Updated ProductCard links to use canonical /product/[slug] path. Verified typescript compilation, linting, and checklist audits passing cleanly.`
 
 ---
 

@@ -78,7 +78,7 @@ export default function ProductCard({ product }: ProductCardProps) {
     <div className="group relative flex flex-col overflow-hidden rounded-2xl border border-slate-100 bg-white p-3 shadow-xs transition-all duration-300 hover:scale-[1.02] hover:border-brand-blue/20 hover:shadow-md hover:shadow-brand-blue-light/50">
       {/* Image Container with Badges */}
       <div className="relative aspect-square w-full overflow-hidden rounded-xl bg-slate-50">
-        <Link href={`/shop/${product.slug}`} className="block h-full w-full">
+        <Link href={`/product/${product.slug}`} className="block h-full w-full">
           <Image
             src={imgSrc}
             alt={product.title}
@@ -123,7 +123,7 @@ export default function ProductCard({ product }: ProductCardProps) {
         </div>
 
         {/* Title & Benefits */}
-        <Link href={`/shop/${product.slug}`} className="group-hover:text-brand-blue">
+        <Link href={`/product/${product.slug}`} className="group-hover:text-brand-blue">
           <h3 className="line-clamp-1 font-sans text-base font-bold text-slate-800 transition-colors">
             {product.title}
           </h3>
