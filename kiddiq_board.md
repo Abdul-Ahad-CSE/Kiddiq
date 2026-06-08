@@ -247,7 +247,7 @@ Custom shipping calculations, hybrid payment logic, and WhatsApp prefill integra
     - Append form fields for: Payment Method (bKash/Nagad), Sender Mobile Number, Transaction ID (verify format).
   - **VERIFY**: `Completed. Expanded checkout validation schema in src/lib/validation.ts to require paymentOption, paymentMethod, senderNumber, and transactionId. Implemented interactive radio option cards for split-payment plans (Advance + COD vs Full Payment), rendering dynamic cost distributions for Paid Now and Due on Delivery splits. Integrated manual payment instructions details for bKash/Nagad transfers on Personal Number 01825462039 with copy trigger. Configured payment proof verification input fields (Payment Method toggle, Sender Mobile Number, and Transaction ID) with form-validation support. Ensured full responsive layouts, touch targets >= 48px, and Purple Ban styling guidelines are met. Checked type compiles, eslint warnings, and master checklist audits passing cleanly.`
 
-- [ ] **TSK-012: Order Submission Action & WhatsApp Integration**
+- [x] **TSK-012: Order Submission Action & WhatsApp Integration**
   - **Agent**: `backend-specialist`
   - **Skills**: `api-patterns`
   - **Priority**: `P1`
@@ -257,7 +257,7 @@ Custom shipping calculations, hybrid payment logic, and WhatsApp prefill integra
     - Build Next.js Server Action to insert orders into PostgreSQL via Prisma.
     - Generate unique transaction verification logic to prevent duplicates.
     - Implement a floating/prominent WhatsApp Support button prefilled with the completed form state (Name, Phone, Order Total, Payment Method, Transaction ID) using `wa.me` API.
-  - **VERIFY**: ``
+  - **VERIFY**: `Completed. Developed Next.js Server Action order.ts for order insertions using safe schema parsing. Runs order creation inside a database interactive transaction to atomically check and decrement product stock levels. Intercepts database unique constraint codes to prevent duplicate Transaction ID uploads, translating database throws into custom UI validation warnings. Built form pending controls disabling input selections and returning validation error alerts. Integrates post-checkout Success Screen displaying order metadata card and pre-filled WhatsApp fast-track verification CTA. All linting, compiler types, and master checks passed.`
 
 - [ ] **TSK-013: Success/Failure Post-Checkout Landing Screens**
   - **Agent**: `frontend-specialist`

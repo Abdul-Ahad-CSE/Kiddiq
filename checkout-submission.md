@@ -1,45 +1,54 @@
-# [Goal Description]
-Implement the backend order submission handler and WhatsApp fast-track fulfillment integration. 
-This covers writing a Next.js Server Action to insert orders into PostgreSQL via Prisma, execute atomic inventory stock deductions, prevent duplicate transaction uploads, and construct pre-filled WhatsApp message redirect targets.
+# Architectural & Backend Blueprint: Order Submission Action & WhatsApp Integration (TSK-012)
 
-## User Review Required
-- **Stock Depletion Action**: Prisma transactions will roll back automatically if any product stock level falls below the requested quantity, reporting a descriptive error back to the customer.
-- **WhatsApp Support Target**: Prefilled template messages will target the Personal phone number `01825462039`.
+## Goal
+Implement the backend order processing pipeline and the WhatsApp fast-track fulfillment integration. This covers creating a Next.js Server Action to validate checkout form payloads, run atomic database transactions (inserting orders and updating inventory stock levels), handle duplicate transactions gracefully, and construct formatted WhatsApp share URLs.
 
-## Open Questions
-Please refer to the detailed implementation plan in the workspace artifact directory: [implementation_plan.md](file:///C:/Users/ABDUL%20AHAD/.gemini/antigravity/brain/4138fc47-26c2-4d57-92ec-ddb2756fb6bd/implementation_plan.md) for full Socratic Questions regarding:
-- Concurrent Stock Deduction Isolation
-- Duplicate Transaction ID Rejection
-- WhatsApp Redirect Trigger Timing
+## Decisions Made
+1. **Stock Deduction**: Option A (Atomic Check & Rollback). Use a single Prisma Transaction to check and decrement stock. Roll back and return an error if inventory is insufficient.
+2. **Duplicate Transaction ID**: Option A (Strict Rejection). Reject the submission if the transaction ID already exists in the database.
+3. **WhatsApp Redirect**: Option A (Success Screen CTA). Do not auto-open new tabs. Generate the WhatsApp payload and render it as a prominent CTA button on the post-checkout success UI.
 
 ## Proposed Changes
 
-### Checkout Component & Order Action
+### Backend & Database Layer
 
 #### [NEW] [order.ts](file:///f:/Level_2/Kiddiq/src/app/actions/order.ts)
-- Define `createOrder` Server Action.
-- Verify checkout inputs via `checkoutSchema.parse()`.
-- Run validation checks on product stock limits.
-- Update database atomic records inside a Prisma `$transaction` block:
-  - Deduct stock levels per line item.
-  - Insert order records including customer data, cost splits, and manual payment fields.
-- Map unique key violation codes to return descriptive validation errors (e.g., duplicate `transactionId` error).
+- Implement `createOrder` Server Action:
+  - Add `"use server"` directive.
+  - Parse and validate input data against `checkoutSchema` from `@/lib/validation`.
+  - Fetch session from NextAuth to link authenticated user id if logged in.
+  - Query DB to verify all cart items exist and have sufficient stock.
+  - Run database write inside a Prisma `$transaction`:
+    1. Verify stock levels per product. If stock goes below 0, throw custom error to trigger rollback.
+    2. Decrement stock for each product.
+    3. Calculate total and splits server-side.
+    4. Create the `Order` record, saving items as a JSON array.
+  - Handle unique constraint errors for `transactionId` and return a user-friendly error response `{ success: false, error: "..." }`.
+  - Return `{ success: true, orderId: "..." }` on success.
+
+### Frontend Checkout Interface
 
 #### [MODIFY] [CheckoutClient.tsx](file:///f:/Level_2/Kiddiq/src/app/checkout/CheckoutClient.tsx)
-- Connect form submission handler `onSubmit` to the `createOrder` Server Action.
-- Display loading indicators and disable submission inputs during async request periods.
-- Render server error message banner if backend validation fails.
-- Clear local cart storage (`clearCart()`) and redirect to dynamic order status page `/order-status/[id]` upon order success.
+- Modify `onSubmit` function:
+  - Transition form status to loading state.
+  - Call the `createOrder` server action.
+  - If action fails:
+    - Display error banner near the top of the form or near submit button.
+    - Re-enable submit button.
+  - If action succeeds:
+    - Clear the local cart storage (`clearCart()`).
+    - Render a Success Screen displaying:
+      - A confirmation message.
+      - A prominent WhatsApp button linking to `wa.me` with the pre-filled encoded order details.
 
 ## Verification Plan
 
-### Automated Tests
-- TypeScript check: `npx tsc --noEmit`
-- ESLint syntax validation: `npm run lint`
+### Automated Checks
+- TypeScript compilation: `npx tsc --noEmit`
+- ESLint checks: `npm run lint`
 - Master audit check: `python -X utf8 .agents/scripts/checklist.py .`
 
 ### Manual Verification
 - Verify checkout errors block invalid forms.
-- Verify inventory deductions update successfully in PostgreSQL database.
-- Verify cart clears and correctly redirects on successful checkout completion.
+- Verify inventory deductions update successfully in database.
 - Verify duplicate transaction ID submissions trigger proper error feedback.
