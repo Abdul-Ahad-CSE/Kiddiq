@@ -56,7 +56,7 @@ export default function LoginPage() {
         // Force a full document reload to update Server Component layout session state
         if (callbackUrl) {
           window.location.replace(callbackUrl);
-        } else if (session?.user?.role === 'ADMIN') {
+        } else if (session?.user?.role === 'SUPER_ADMIN' || session?.user?.role === 'SUB_ADMIN') {
           window.location.replace('/admin');
         } else {
           window.location.replace('/');

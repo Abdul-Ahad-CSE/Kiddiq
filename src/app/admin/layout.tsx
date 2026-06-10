@@ -9,7 +9,8 @@ import {
   Layers, 
   Package, 
   LineChart,
-  UserCheck
+  UserCheck,
+  Users
 } from "lucide-react";
 
 export default async function AdminLayout({
@@ -19,17 +20,61 @@ export default async function AdminLayout({
 }) {
   const session = await getServerSession(authOptions);
 
-  if (!session || session.user.role !== "ADMIN") {
+  if (!session || (session.user.role !== "SUPER_ADMIN" && session.user.role !== "SUB_ADMIN")) {
     redirect("/login");
   }
 
-  const navLinks = [
-    { name: "Dashboard", href: "/admin", icon: LayoutDashboard },
-    { name: "Orders", href: "/admin/orders", icon: ShoppingBag },
-    { name: "Categories", href: "/admin/categories", icon: Layers },
-    { name: "Products", href: "/admin/products", icon: Package },
-    { name: "Finance", href: "/admin/finance", icon: LineChart },
-  ];
+  const navLinks = [];
+  const role = session.user.role;
+  const permissions = session.user.permissions || [];
+
+  if (role === "SUPER_ADMIN") {
+    navLinks.push(
+      { name: "Dashboard", href: "/admin", icon: LayoutDashboard },
+      { name: "Orders", href: "/admin/orders", icon: ShoppingBag },
+      { name: "Categories", href: "/admin/categories", icon: Layers },
+      { name: "Products", href: "/admin/products", icon: Package },
+      { name: "Finance", href: "/admin/finance", icon: LineChart },
+      { name: "Staff", href: "/admin/staff", icon: Users }
+    );
+  } else if (role === "SUB_ADMIN") {
+    if (permissions.includes("VIEW_DASHBOARD")) {
+      navLinks.push({ name: "Dashboard", href: "/admin", icon: LayoutDashboard });
+    }
+    if (permissions.includes("MANAGE_ORDERS")) {
+      navLinks.push({ name: "Orders", href: "/admin/orders", icon: ShoppingBag });
+    }
+    if (permissions.includes("MANAGE_CATEGORIES")) {
+      navLinks.push({ name: "Categories", href: "/admin/categories", icon: Layers });
+    }
+    if (permissions.includes("MANAGE_PRODUCTS")) {
+      navLinks.push({ name: "Products", href: "/admin/products", icon: Package });
+    }
+    if (permissions.includes("MANAGE_FINANCE")) {
+      navLinks.push({ name: "Finance", href: "/admin/finance", icon: LineChart });
+    }
+  }
+
+  if (navLinks.length === 0) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-slate-50 p-6 font-sans">
+        <div className="w-full max-w-md bg-white p-8 rounded-2xl border border-slate-100 shadow-sm text-center space-y-6">
+          <div className="w-16 h-16 rounded-full bg-red-50 flex items-center justify-center text-red-600 mx-auto">
+            <UserCheck className="h-8 w-8" />
+          </div>
+          <div>
+            <h2 className="text-xl font-bold text-slate-800">Access Restricted</h2>
+            <p className="text-sm text-slate-500 mt-2">
+              Your account does not have any administrator permissions. Please contact a Super Admin to assign roles.
+            </p>
+          </div>
+          <div className="pt-2 border-t border-slate-100">
+            <AdminLogoutButton />
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-screen flex-col md:flex-row bg-slate-50 font-sans">

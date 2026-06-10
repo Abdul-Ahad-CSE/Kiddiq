@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useTransition } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import { Order, OrderStatus, VerificationStatus } from "@/generated/prisma/client";
+import type { Order, OrderStatus, VerificationStatus } from "@/generated/prisma/client";
 import {
   verifyOrderPayment,
   rejectOrderPayment,

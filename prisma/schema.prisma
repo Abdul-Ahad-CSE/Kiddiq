@@ -11,7 +11,8 @@ datasource db {
 }
 
 enum Role {
-  ADMIN
+  SUPER_ADMIN
+  SUB_ADMIN
   CUSTOMER
 }
 
@@ -31,16 +32,18 @@ enum OrderStatus {
 }
 
 model User {
-  id        String     @id @default(uuid())
-  name      String
-  email     String     @unique
-  password  String
-  role      Role       @default(CUSTOMER)
-  orders    Order[]
-  reviews   Review[]
-  wishlist  Wishlist[]
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
+  id          String     @id @default(uuid())
+  name        String
+  email       String     @unique
+  password    String
+  role        Role       @default(CUSTOMER)
+  permissions String[]   @default([])
+  isActive    Boolean    @default(true)
+  orders      Order[]
+  reviews     Review[]
+  wishlist    Wishlist[]
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
 }
 
 model Category {
@@ -153,4 +156,15 @@ model Wishlist {
   createdAt DateTime @default(now())
 
   @@unique([userId, productId])
+}
+
+model AuditLog {
+  id          String   @id @default(uuid())
+  adminEmail  String
+  adminRole   Role
+  action      String   // e.g. "VERIFY_PAYMENT", "REJECT_PAYMENT", "UPDATE_STATUS", "CREATE_SUB_ADMIN", "SUSPEND_SUB_ADMIN"
+  targetModel String   // "Order"
+  targetId    String   // Order ID
+  changes     Json     // JSON representation of mutated attributes or audit details
+  createdAt   DateTime @default(now())
 }

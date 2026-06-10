@@ -1,9 +1,10 @@
 "use server";
 
 import prisma from "@/lib/db";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
 import { Prisma, VerificationStatus, OrderStatus } from "@/generated/prisma/client";
+import { verifySessionAndPermissions } from "@/lib/auth-utils";
+import { logAdminAction } from "./audit-log";
+
 
 export async function getAdminOrders(params: {
   search?: string;
@@ -12,10 +13,7 @@ export async function getAdminOrders(params: {
   page?: number;
   limit?: number;
 } = {}) {
-  const session = await getServerSession(authOptions);
-  if (!session || session.user.role !== "ADMIN") {
-    throw new Error("Unauthorized");
-  }
+  await verifySessionAndPermissions(["MANAGE_ORDERS"]);
 
   const { search, verificationStatus, orderStatus, page = 1, limit = 10 } = params;
 
@@ -60,10 +58,9 @@ export async function getAdminOrders(params: {
 
 export async function verifyOrderPayment(orderId: string) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session || session.user.role !== "ADMIN") {
-      throw new Error("Unauthorized");
-    }
+    const session = await verifySessionAndPermissions(["MANAGE_ORDERS"]);
+    const adminEmail = session.user.email!;
+    const adminRole = session.user.role;
 
     const updatedOrder = await prisma.order.update({
       where: { id: orderId },
@@ -72,6 +69,15 @@ export async function verifyOrderPayment(orderId: string) {
         orderStatus: "confirmed",
       },
     });
+
+    await logAdminAction(
+      adminEmail,
+      adminRole,
+      "VERIFY_PAYMENT",
+      "Order",
+      orderId,
+      { verificationStatus: "verified", orderStatus: "confirmed" }
+    );
 
     return { success: true, order: updatedOrder };
   } catch (error) {
@@ -82,10 +88,9 @@ export async function verifyOrderPayment(orderId: string) {
 
 export async function rejectOrderPayment(orderId: string, notes: string) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session || session.user.role !== "ADMIN") {
-      throw new Error("Unauthorized");
-    }
+    const session = await verifySessionAndPermissions(["MANAGE_ORDERS"]);
+    const adminEmail = session.user.email!;
+    const adminRole = session.user.role;
 
     const updatedOrder = await prisma.order.update({
       where: { id: orderId },
@@ -96,6 +101,15 @@ export async function rejectOrderPayment(orderId: string, notes: string) {
       },
     });
 
+    await logAdminAction(
+      adminEmail,
+      adminRole,
+      "REJECT_PAYMENT",
+      "Order",
+      orderId,
+      { verificationStatus: "rejected", orderStatus: "pending_verification", adminNotes: notes }
+    );
+
     return { success: true, order: updatedOrder };
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to reject order payment";
@@ -105,10 +119,9 @@ export async function rejectOrderPayment(orderId: string, notes: string) {
 
 export async function updateOrderStatus(orderId: string, status: OrderStatus) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session || session.user.role !== "ADMIN") {
-      throw new Error("Unauthorized");
-    }
+    const session = await verifySessionAndPermissions(["MANAGE_ORDERS"]);
+    const adminEmail = session.user.email!;
+    const adminRole = session.user.role;
 
     await prisma.order.update({
       where: { id: orderId },
@@ -117,9 +130,19 @@ export async function updateOrderStatus(orderId: string, status: OrderStatus) {
       },
     });
 
+    await logAdminAction(
+      adminEmail,
+      adminRole,
+      "UPDATE_STATUS",
+      "Order",
+      orderId,
+      { orderStatus: status }
+    );
+
     return { success: true };
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to update order status";
     return { success: false, error: message };
   }
 }
+

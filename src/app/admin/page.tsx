@@ -11,11 +11,38 @@ import {
   XCircle
 } from "lucide-react";
 import Link from "next/link";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+import { redirect } from "next/navigation";
+import { Role } from "@/generated/prisma/client";
 
 // Force dynamic rendering as it reads real-time DB metrics
 export const dynamic = "force-dynamic";
 
 export default async function AdminDashboardPage() {
+  const session = await getServerSession(authOptions);
+  if (!session) {
+    redirect("/login");
+  }
+
+  const role = session.user.role;
+  const permissions = session.user.permissions || [];
+
+  if (role === Role.SUB_ADMIN && !permissions.includes("VIEW_DASHBOARD")) {
+    if (permissions.includes("MANAGE_ORDERS")) {
+      redirect("/admin/orders");
+    }
+    if (permissions.includes("MANAGE_CATEGORIES")) {
+      redirect("/admin/categories");
+    }
+    if (permissions.includes("MANAGE_PRODUCTS")) {
+      redirect("/admin/products");
+    }
+    if (permissions.includes("MANAGE_FINANCE")) {
+      redirect("/admin/finance");
+    }
+  }
+
   const metrics = await getAdminMetrics();
 
   // Fetch recent orders directly from database for the recent activity section

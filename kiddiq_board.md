@@ -314,42 +314,73 @@ Back-office order grid, sales analytics, and order mutations.
     - Provide status progression trigger: Processing -> Shipped -> Delivered -> Cancelled.
   - **VERIFY**: `Completed. Implemented secure server actions in admin-orders.ts for verification, rejection (with custom notes), and order status updates. Integrated verification/rejection panel and order status progress selectors into OrdersGridView details modal. Transition states are managed using useTransition, with page data refreshed instantly using router.refresh(). All code typechecks, lints, and passes checklist validations.`
 
-- [ ] **TSK-017: Admin Authentication Security & Audit Trail**
+- [x] **TSK-017a: Dynamic RBAC & Audit Trail**
   - **Agent**: `backend-specialist`
   - **Skills**: `nodejs-best-practices`, `database-design`
   - **Priority**: `P1`
   - **Dependencies**: `TSK-004`, `TSK-016`
-  - **INPUT**: `prisma/schema.prisma`, `src/app/api/auth/[...nextauth]/route.ts`
-  - **OUTPUT**: `prisma/schema.prisma`, `src/app/actions/audit-log.ts`, `src/app/actions/admin-orders.ts`
-    - Update NextAuth configuration and credentials validation to enforce unique email logins for all admin users.
-    - Add `AuditLog` model to `prisma/schema.prisma` with fields: `id`, `adminEmail`, `action`, `targetModel`, `targetId`, `changes` (Json), and `createdAt`.
-    - Establish a server-side audit trail utility to record mutations (order status changes, stock adjustments, financial entries).
-    - Modify existing order and inventory Server Actions to log the email/name of the specific admin (e.g., Ahad, Sayem, Arif) performing mutations.
-  - **VERIFY**: `Check that actions run by authenticated admins are successfully recorded in the AuditLog database table with correct admin identity and timestamp.`
+  - **INPUT**: `prisma/schema.prisma`, `src/lib/auth.ts`
+  - **OUTPUT**: `prisma/schema.prisma`, `src/types/next-auth.d.ts`, `src/lib/auth.ts`, `src/lib/auth-utils.ts`, `src/app/actions/audit-log.ts`, `src/app/actions/admin-orders.ts`
+    - Update `Role` enum to support `SUPER_ADMIN`, `SUB_ADMIN`, and `CUSTOMER`.
+    - Add `permissions` (String[]) and `isActive` (Boolean) fields to the `User` model in `schema.prisma`. Ensure permissions maps to `['VIEW_DASHBOARD', 'MANAGE_ORDERS', 'MANAGE_CATEGORIES', 'MANAGE_PRODUCTS', 'MANAGE_FINANCE']`.
+    - Create type declaration file `src/types/next-auth.d.ts` to extend session/user fields with `role` and `permissions`.
+    - Update NextAuth callbacks in `src/lib/auth.ts` to inject role and permissions into session objects, and reject login if `isActive` is false.
+    - Build a server authorization utility `src/lib/auth-utils.ts` to check required permissions (specifically matching the new granular keys: `VIEW_DASHBOARD`, `MANAGE_ORDERS`, `MANAGE_CATEGORIES`, `MANAGE_PRODUCTS`, `MANAGE_FINANCE`) for active sessions.
+    - Create `AuditLog` model containing `adminEmail` and `adminRole` (Role enum) fields.
+    - Build `logAdminAction` and instrument order mutations in `admin-orders.ts` to securely log active admin identities, checking for `MANAGE_ORDERS` and logging mutations.
+  - **VERIFY**: `Check that database pushes succeed, NextAuth sessions contain correct role and permissions payload, and all order status transitions log audit entries with correct admin roles.`
+
+- [x] **TSK-017b: Staff, Access Management & Route Protection**
+  - **Agent**: `frontend-specialist`
+  - **Skills**: `frontend-design`, `clean-code`
+  - **Priority**: `P2`
+  - **Dependencies**: `TSK-017a`
+  - **INPUT**: `prisma/schema.prisma`, `src/app/actions/audit-log.ts`
+  - **OUTPUT**: `src/app/admin/staff/page.tsx`, `src/app/actions/admin-staff.ts`, `src/app/admin/staff/StaffManagementClient.tsx`, `src/app/admin/layout.tsx`
+    - Design a staff management portal at `/admin/staff` restricted strictly to users with `SUPER_ADMIN` role.
+    - Implement Server Actions in `admin-staff.ts` to support adding new sub admins, updating access permissions, and suspending or deleting accounts.
+    - Update the permissions modal form in `src/app/admin/staff/StaffManagementClient.tsx` to display distinct checkboxes/toggles for all 5 new granular permissions: `VIEW_DASHBOARD`, `MANAGE_ORDERS`, `MANAGE_CATEGORIES`, `MANAGE_PRODUCTS`, and `MANAGE_FINANCE`.
+    - Implement conditional rendering in the Admin Sidebar layout (`src/app/admin/layout.tsx`): dynamically hide/show links depending on the Sub-Admin's active permissions (`VIEW_DASHBOARD` controls Dashboard, `MANAGE_ORDERS` controls Orders, `MANAGE_CATEGORIES` controls Categories, `MANAGE_PRODUCTS` controls Products, `MANAGE_FINANCE` controls Finance). Super Admins bypass all checks.
+    - Implement strict page-level route checks in `src/app/admin/layout.tsx` and admin routes. If a Sub-Admin logs in without `VIEW_DASHBOARD` access, automatically redirect them to the first route they *do* have access to (e.g. `/admin/orders` if they have `MANAGE_ORDERS`), or show an "Unauthorized" view if they have zero permissions.
+  - **VERIFY**: `Log in as a Super Admin, add a new Sub Admin, toggle their permissions, verify the database values updates. Log in as a Sub Admin with limited permissions, verify only their allowed sidebar links appear, and verify attempting to access restricted routes triggers the correct redirect or unauthorized layout.`
+
+- [x] **TSK-017c: Cloudinary Integration & Upload Component**
+  - **Agent**: `frontend-specialist`
+  - **Skills**: `frontend-design`, `clean-code`
+  - **Priority**: `P1`
+  - **Dependencies**: `TSK-001`
+  - **INPUT**: `package.json`
+  - **OUTPUT**: `src/components/ImageUpload.tsx`
+    - Install the `next-cloudinary` library package.
+    - Create a reusable client-side component `src/components/ImageUpload.tsx` using `CldUploadWidget` from Next-Cloudinary.
+    - Component must accept an `onChange` callback prop to communicate the uploaded asset's secure URL string back to the parent component/form.
+    - Display a premium dropzone preview area showing the uploaded image thumbnail or an upload trigger button, keeping layout touch targets >= 48px and compliant with the Purple Ban (using slate, blues, and emerald tones).
+  - **VERIFY**: `Confirm that the next-cloudinary package builds correctly and the ImageUpload component compiles cleanly without type errors.`
 
 - [ ] **TSK-018: Category Management Interface**
   - **Agent**: `frontend-specialist`
   - **Skills**: `frontend-design`, `api-patterns`
   - **Priority**: `P2`
-  - **Dependencies**: `TSK-014`
-  - **INPUT**: `prisma/schema.prisma`, `src/app/admin/page.tsx`
+  - **Dependencies**: `TSK-014`, `TSK-017c`
+  - **INPUT**: `prisma/schema.prisma`, `src/app/admin/page.tsx`, `src/components/ImageUpload.tsx`
   - **OUTPUT**: `src/app/admin/categories/page.tsx`, `src/app/actions/admin-categories.ts`
     - Ensure the `Category` schema supports fields: `id`, `name`, `slug`, `image` (URL/upload path), `text` (description text), and timestamps. Run prisma migration if needed.
-    - Implement full CRUD Server Actions (`createCategory`, `updateCategory`, `deleteCategory`) with input validation.
-    - Design a responsive Category CRUD data grid interface under `/admin/categories` with modals/forms to add, edit, or delete categories.
-  - **VERIFY**: `Confirm categories can be created, updated, and deleted dynamically. Verify database values change and reflect instantly in the public navigation navbar.`
+    - Implement full CRUD Server Actions (`createCategory`, `updateCategory`, `deleteCategory`) with input validation. Enforce the `MANAGE_CATEGORIES` permission on both the page rendering and the Server Actions.
+    - Design a responsive Category CRUD data grid interface under `/admin/categories` with modals/forms to add, edit, or delete categories. Enforce frontend UI checks showing or hiding mutation buttons based on permission scope.
+    - **Cloudinary Image Upload Integration**: Force the Category creation/edit forms to use the reusable `ImageUpload` component. Database mutations (`createCategory` and `updateCategory`) must strictly expect and store a `String` representing the Cloudinary secure URL for the `image` field (no local files or Base64).
+  - **VERIFY**: `Confirm categories can be created, updated, and deleted dynamically. Verify database values change and reflect instantly in the public navigation navbar. Verify that Sub-Admins without MANAGE_CATEGORIES are blocked from accessing the page and executing the actions. Confirm image field contains a valid secure Cloudinary URL.`
 
 - [ ] **TSK-019: Product Inventory Management**
   - **Agent**: `backend-specialist`
   - **Skills**: `nodejs-best-practices`, `frontend-design`
   - **Priority**: `P2`
-  - **Dependencies**: `TSK-018`
-  - **INPUT**: `prisma/schema.prisma`, `src/lib/upload.ts`
+  - **Dependencies**: `TSK-018`, `TSK-017c`
+  - **INPUT**: `prisma/schema.prisma`, `src/components/ImageUpload.tsx`
   - **OUTPUT**: `src/app/admin/products/page.tsx`, `src/app/actions/admin-products.ts`
     - Build a Product inventory management dashboard at `/admin/products` listing all educational toys.
-    - Implement CRUD Server Actions to manage `Product` records, editing fields: `title`, `description`, `price`, `categoryId`, `ageGroup`, `stock`, `benefits` (bullet points), and `featured` status.
-    - Integrate an upload dropzone using the `uploadMedia` file upload service to upload multiple images. Store the resulting asset paths in the database as a JSONB array.
-  - **VERIFY**: `Create a new product, upload multiple images, check JSONB array storage in database, and verify price/stock updates reflect dynamically in the catalog grid.`
+    - Implement CRUD Server Actions to manage `Product` records, editing fields: `title`, `description`, `price`, `categoryId`, `ageGroup`, `stock`, `benefits` (bullet points), and `featured` status. Enforce the `MANAGE_PRODUCTS` permission on both the page rendering and the Server Actions.
+    - **Cloudinary Image Upload Integration**: Integrate the `ImageUpload` component into the Product form to support uploading multiple images. Construct a list of secure Cloudinary URL strings and store them in the database `images` field as a JSONB array.
+  - **VERIFY**: `Create a new product, upload multiple images, check JSONB array storage in database, and verify price/stock updates reflect dynamically in the catalog grid. Verify that Sub-Admins without MANAGE_PRODUCTS are blocked from accessing the page and executing actions. Verify that the product images array contains valid Cloudinary URLs.`
 
 - [ ] **TSK-020: Omnichannel Order Creation**
   - **Agent**: `backend-specialist`
@@ -358,12 +389,12 @@ Back-office order grid, sales analytics, and order mutations.
   - **Dependencies**: `TSK-019`
   - **INPUT**: `prisma/schema.prisma`, `src/app/actions/order.ts`
   - **OUTPUT**: `src/app/admin/orders/create/page.tsx`, `src/app/actions/admin-create-order.ts`
-    - Build a manual checkout/order creation form under `/admin/orders/create` to handle manual or social media sales.
+    - Build a manual checkout/order creation form under `/admin/orders/create` to handle manual or social media sales. Enforce the `MANAGE_ORDERS` permission both on the page rendering and the Server Actions.
     - Support fields for customer billing details (Name, Phone, optional Email, Full Address).
     - Build a searchable product selection dropdown to add multiple items from the database catalog and input quantities.
     - Add input fields for custom discounts, manual shipping adjustments, and pricing overrides.
     - Include a `salesChannel` dropdown tag field containing options: `Facebook`, `Instagram`, `Direct`.
-  - **VERIFY**: `Submit a manual order, confirm it computes subtotal/totals correctly, decrements stock levels, and sets the salesChannel tag correctly in the database.`
+  - **VERIFY**: `Submit a manual order, confirm it computes subtotal/totals correctly, decrements stock levels, and sets the salesChannel tag correctly in the database. Verify that users without MANAGE_ORDERS cannot access or submit.`
 
 ---
 
@@ -378,9 +409,9 @@ Point of Sale logging, ledger schemas, and financial KPI calculators.
   - **INPUT**: `prisma/schema.prisma`
   - **OUTPUT**: `src/app/admin/pos/page.tsx`, `src/app/actions/pos-sales.ts`, `prisma/schema.prisma`
     - Define a new `DirectSale` data model in `schema.prisma` with fields: `id`, `date` (DateTime), `product` (String/Product reference), `quantity` (Int), `price` (Float), `receivedBy` (String), `comment` (String), and timestamps.
-    - Build a lightweight Point of Sale (POS) ledger interface under `/admin/pos` using a data grid layout.
+    - Build a lightweight Point of Sale (POS) ledger interface under `/admin/pos` using a data grid layout. Enforce the `MANAGE_ORDERS` permission both on the page rendering and the Server Actions.
     - Provide inline editing/creation controls for the data grid to support adding, updating, and deleting sales entries with instant validation.
-  - **VERIFY**: `Confirm POS direct sales update rows instantly, persist in the database, and correctly reflect in stock inventories.`
+  - **VERIFY**: `Confirm POS direct sales update rows instantly, persist in the database, and correctly reflect in stock inventories. Verify that users without MANAGE_ORDERS cannot access or modify POS data.`
 
 - [ ] **TSK-022: Financial Accounting Module (Backend)**
   - **Agent**: `database-architect`
@@ -392,12 +423,12 @@ Point of Sale logging, ledger schemas, and financial KPI calculators.
     - Add financial models to `schema.prisma`:
       - `Investment`: `id`, `date` (DateTime), `person` (String), `amount` (Float), `comment` (String), timestamps.
       - `Expense`: `id`, `date` (DateTime), `paidBy` (String), `amount` (Float), `invoiceUrl` (String?), `comment` (String), timestamps.
-    - Create a server-side financial aggregator utility in `src/app/actions/finance.ts` containing functions to dynamically calculate:
+    - Create a server-side financial aggregator utility in `src/app/actions/finance.ts` containing functions to dynamically calculate financial metrics. Enforce the `MANAGE_FINANCE` permission in all exported Server Actions.
       - `Total Invest`: Sum of all `Investment` amounts.
       - `Total Expense`: Sum of all `Expense` amounts.
       - `Total Sell`: Sum of all `amountPaid` from `Order` plus `DirectSale` totals.
       - `In Hand`: Computed as `(Total Invest + Total Sell) - Total Expense`.
-  - **VERIFY**: `Verify computed aggregations return exact calculations when compared to manual database entries.`
+  - **VERIFY**: `Verify computed aggregations return exact calculations when compared to manual database entries. Verify that actions throw authorization errors if executed by users without MANAGE_FINANCE.`
 
 - [ ] **TSK-023: Financial Accounting Module (Frontend)**
   - **Agent**: `frontend-specialist`
@@ -406,11 +437,11 @@ Point of Sale logging, ledger schemas, and financial KPI calculators.
   - **Dependencies**: `TSK-022`
   - **INPUT**: `src/app/actions/finance.ts`, `src/lib/upload.ts`
   - **OUTPUT**: `src/app/admin/finance/page.tsx`
-    - Design a clean "Finance" dashboard UI at `/admin/finance`.
+    - Design a clean "Finance" dashboard UI at `/admin/finance`. Enforce the `MANAGE_FINANCE` permission on both the page rendering and the Server Actions.
     - Create top-row KPI cards displaying dynamic metrics: Total Invest, Total Expense, Total Sell, and In Hand.
     - Create a tabbed panel interface containing separate data grids for Investments list and Expenses list.
     - Build transaction log forms for recording new Investments and Expenses, with an upload zone for Expense invoice URLs using `uploadMedia`.
-  - **VERIFY**: `Submit new investments and expenses, verify KPI cards update dynamically, and ensure uploaded invoice file URLs can be opened.`
+  - **VERIFY**: `Submit new investments and expenses, verify KPI cards update dynamically, and ensure uploaded invoice file URLs can be opened. Verify that users without MANAGE_FINANCE are blocked.`
 
 ---
 

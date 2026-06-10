@@ -179,7 +179,7 @@ export default function Navbar({ session }: NavbarProps) {
                 </div>
 
                 {/* Role Specific Actions */}
-                {session.user.role === "ADMIN" && (
+                {(session.user.role === "SUPER_ADMIN" || session.user.role === "SUB_ADMIN") && (
                   <Link
                     href="/admin"
                     title="Admin Dashboard"
@@ -275,7 +275,7 @@ export default function Navbar({ session }: NavbarProps) {
                   </div>
 
                   <div className="flex gap-2">
-                    {session.user.role === "ADMIN" && (
+                    {(session.user.role === "SUPER_ADMIN" || session.user.role === "SUB_ADMIN") && (
                       <Link
                         href="/admin"
                         className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-brand-blue-light py-2.5 text-sm font-semibold text-brand-blue"

@@ -1,14 +1,10 @@
 "use server";
 
 import prisma from "@/lib/db";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { verifySessionAndPermissions } from "@/lib/auth-utils";
 
 export async function getAdminMetrics() {
-  const session = await getServerSession(authOptions);
-  if (!session || session.user.role !== "ADMIN") {
-    throw new Error("Unauthorized");
-  }
+  await verifySessionAndPermissions(["VIEW_DASHBOARD"]);
 
   // 1. totalSales: Sum of amountPaid of all Order records where verificationStatus === 'verified'.
   const salesAgg = await prisma.order.aggregate({

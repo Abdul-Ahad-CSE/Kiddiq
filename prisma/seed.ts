@@ -74,12 +74,23 @@ async function main() {
         name: 'Kiddiq Admin',
         email: adminEmail,
         password: hashedPassword,
-        role: Role.ADMIN,
+        role: Role.SUPER_ADMIN,
+        permissions: ['VIEW_DASHBOARD', 'MANAGE_ORDERS', 'MANAGE_CATEGORIES', 'MANAGE_PRODUCTS', 'MANAGE_FINANCE'],
+        isActive: true,
       },
     });
     console.log('✅ Admin account seeded successfully.');
   } else {
-    console.log('ℹ️ Admin account already exists. Skipping user seed.');
+    // Make sure existing admin has correct super admin role if it already exists
+    await prisma.user.update({
+      where: { email: adminEmail },
+      data: {
+        role: Role.SUPER_ADMIN,
+        permissions: ['VIEW_DASHBOARD', 'MANAGE_ORDERS', 'MANAGE_CATEGORIES', 'MANAGE_PRODUCTS', 'MANAGE_FINANCE'],
+        isActive: true,
+      }
+    });
+    console.log('ℹ️ Admin account already exists. Updated to SUPER_ADMIN.');
   }
 
   // 2. Seed Flat Categories
