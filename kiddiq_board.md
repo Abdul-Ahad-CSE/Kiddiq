@@ -357,7 +357,7 @@ Back-office order grid, sales analytics, and order mutations.
     - Display a premium dropzone preview area showing the uploaded image thumbnail or an upload trigger button, keeping layout touch targets >= 48px and compliant with the Purple Ban (using slate, blues, and emerald tones).
   - **VERIFY**: `Confirm that the next-cloudinary package builds correctly and the ImageUpload component compiles cleanly without type errors.`
 
-- [ ] **TSK-018: Category Management Interface**
+- [x] **TSK-018: Category Management Interface**
   - **Agent**: `frontend-specialist`
   - **Skills**: `frontend-design`, `api-patterns`
   - **Priority**: `P2`
@@ -368,7 +368,7 @@ Back-office order grid, sales analytics, and order mutations.
     - Implement full CRUD Server Actions (`createCategory`, `updateCategory`, `deleteCategory`) with input validation. Enforce the `MANAGE_CATEGORIES` permission on both the page rendering and the Server Actions.
     - Design a responsive Category CRUD data grid interface under `/admin/categories` with modals/forms to add, edit, or delete categories. Enforce frontend UI checks showing or hiding mutation buttons based on permission scope.
     - **Cloudinary Image Upload Integration**: Force the Category creation/edit forms to use the reusable `ImageUpload` component. Database mutations (`createCategory` and `updateCategory`) must strictly expect and store a `String` representing the Cloudinary secure URL for the `image` field (no local files or Base64).
-  - **VERIFY**: `Confirm categories can be created, updated, and deleted dynamically. Verify database values change and reflect instantly in the public navigation navbar. Verify that Sub-Admins without MANAGE_CATEGORIES are blocked from accessing the page and executing the actions. Confirm image field contains a valid secure Cloudinary URL.`
+  - **VERIFY**: `Completed. Added text field to Category model in Prisma schema, synchronized with Neon DB using prisma db push, and updated the seed script. Created secure, validated CRUD Server Actions in admin-categories.ts protected by verifySessionAndPermissions. Built Categories Page route page.tsx with strict role-level guards and CategoryManagementClient.tsx client view with a debounced search filter, add/edit/delete modals, and slug auto-generation. Fully compliant with Purple Ban and touch target sizes. Passed ESLint typechecks and master checklist validation.`
 
 - [ ] **TSK-019: Product Inventory Management**
   - **Agent**: `backend-specialist`

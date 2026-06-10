@@ -51,6 +51,7 @@ model Category {
   name      String    @unique
   slug      String    @unique
   image     String
+  text      String    @default("")
   products  Product[]
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt

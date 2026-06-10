@@ -96,9 +96,24 @@ async function main() {
   // 2. Seed Flat Categories
   console.log('📂 Seeding flat categories...');
   const categoriesData = [
-    { name: 'Educational Toys', slug: 'educational-toys', image: '/images/categories/educational-toys.jpg' },
-    { name: 'School Supplies', slug: 'school-supplies', image: '/images/categories/school-supplies.jpg' },
-    { name: 'Parenting Resources', slug: 'parenting-resources', image: '/images/categories/parenting-resources.jpg' },
+    {
+      name: 'Educational Toys',
+      slug: 'educational-toys',
+      image: '/images/categories/educational-toys.jpg',
+      text: 'High-quality puzzles, shapes, and STEM kits to develop fine motor skills and spatial logic.',
+    },
+    {
+      name: 'School Supplies',
+      slug: 'school-supplies',
+      image: '/images/categories/school-supplies.jpg',
+      text: 'Curated stationery, ergonomic backpacks, and non-toxic materials for early schooling.',
+    },
+    {
+      name: 'Parenting Resources',
+      slug: 'parenting-resources',
+      image: '/images/categories/parenting-resources.jpg',
+      text: 'Expert-written guides and tools for positive coaching and early developmental milestones.',
+    },
   ];
 
   const categoriesMap: Record<string, string> = {};
@@ -106,7 +121,7 @@ async function main() {
   for (const cat of categoriesData) {
     const upserted = await prisma.category.upsert({
       where: { slug: cat.slug },
-      update: { name: cat.name, image: cat.image },
+      update: { name: cat.name, image: cat.image, text: cat.text },
       create: cat,
     });
     categoriesMap[cat.name] = upserted.id;
