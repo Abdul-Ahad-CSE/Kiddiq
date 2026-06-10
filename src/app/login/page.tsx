@@ -1,11 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { signIn } from 'next-auth/react';
+import { signIn, getSession } from 'next-auth/react';
 import { KeyRound, Mail, AlertCircle, ArrowRight } from 'lucide-react';
 
 const loginSchema = z.object({
@@ -16,7 +15,6 @@ const loginSchema = z.object({
 type LoginFormValues = z.infer<typeof loginSchema>;
 
 export default function LoginPage() {
-  const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -47,9 +45,22 @@ export default function LoginPage() {
         setError('Invalid email or password. Please try again.');
         setIsLoading(false);
       } else {
-        // Redirect on successful login
-        router.refresh();
-        router.push('/');
+        // Fetch session on the client to check user role details
+        const session = await getSession();
+        
+        // Parse callbackUrl from search parameters natively to avoid Next.js static de-opt warnings
+        const callbackUrl = typeof window !== 'undefined'
+          ? new URLSearchParams(window.location.search).get('callbackUrl')
+          : null;
+
+        // Force a full document reload to update Server Component layout session state
+        if (callbackUrl) {
+          window.location.replace(callbackUrl);
+        } else if (session?.user?.role === 'ADMIN') {
+          window.location.replace('/admin');
+        } else {
+          window.location.replace('/');
+        }
       }
     } catch (err) {
       console.error('Login error:', err);
@@ -57,6 +68,8 @@ export default function LoginPage() {
       setIsLoading(false);
     }
   };
+
+
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-brand-blue-light via-slate-50 to-brand-blue-light/30 px-4 py-12 sm:px-6 lg:px-8">

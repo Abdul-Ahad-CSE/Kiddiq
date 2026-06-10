@@ -259,7 +259,7 @@ Custom shipping calculations, hybrid payment logic, and WhatsApp prefill integra
     - Implement a floating/prominent WhatsApp Support button prefilled with the completed form state (Name, Phone, Order Total, Payment Method, Transaction ID) using `wa.me` API.
   - **VERIFY**: `Completed. Developed Next.js Server Action order.ts for order insertions using safe schema parsing. Runs order creation inside a database interactive transaction to atomically check and decrement product stock levels. Intercepts database unique constraint codes to prevent duplicate Transaction ID uploads, translating database throws into custom UI validation warnings. Built form pending controls disabling input selections and returning validation error alerts. Integrates post-checkout Success Screen displaying order metadata card and pre-filled WhatsApp fast-track verification CTA. All linting, compiler types, and master checks passed.`
 
-- [ ] **TSK-013: Success/Failure Post-Checkout Landing Screens**
+- [x] **TSK-013: Success/Failure Post-Checkout Landing Screens**
   - **Agent**: `frontend-specialist`
   - **Skills**: `frontend-design`
   - **Priority**: `P2`
@@ -269,14 +269,14 @@ Custom shipping calculations, hybrid payment logic, and WhatsApp prefill integra
     - Build high-trust status pages.
     - Success (verified / pending): Show Order ID, items breakdown, payment details, and dynamic instructions.
     - Failure / Rejected: Display details of rejected status with instructions on how to retry or contact support.
-  - **VERIFY**: ``
+  - **VERIFY**: `Completed. Built dynamic server-side page at /order-status/[id] mapping pending, verified, and rejected UI states. Designed client component OrderStatusView.tsx using Framer Motion animations. Included copy buttons for wallet number and order ID with dynamic feedback, dynamic WhatsApp CTA verification payload, and parsed order items breakdown card. Passed typescript compilation, eslint linting, and checklist.py validations.`
 
 ---
 
 ### Phase 5: Admin Dashboard & Order Verification Panel
 Back-office order grid, sales analytics, and order mutations.
 
-- [ ] **TSK-014: Admin Analytics & Metrics Dashboard**
+- [x] **TSK-014: Admin Analytics & Metrics Dashboard**
   - **Agent**: `frontend-specialist`
   - **Skills**: `frontend-design`, `nextjs-react-expert`
   - **Priority**: `P2`
@@ -285,9 +285,10 @@ Back-office order grid, sales analytics, and order mutations.
   - **OUTPUT**: `src/app/admin/page.tsx`
     - Design a high-fidelity analytics panel accessible only by `ADMIN` users.
     - Display KPI cards: Total Sales (BDT), Active Orders, Total Registered Customers, and graphical charts for revenue stats.
-  - **VERIFY**: ``
+  - **VERIFY**: `Completed. Built secure layouts restricting access to ADMIN users via NextAuth getServerSession. Designed an asymmetric high-contrast Swiss-geometric layout at /admin displaying KPI Cards for BDT Sales, Active Orders count, and Registered Customers. Created a custom, responsive, lightweight 30-day SVG revenue chart, dynamic Category Sales Mix meters, and a recent store activity ledger table. All typescript, lint, security, schema, and layout checks are 100% passing.`
 
-- [ ] **TSK-015: Interactive Orders Data Grid & Search Filters**
+
+- [x] **TSK-015: Interactive Orders Data Grid & Search Filters**
   - **Agent**: `backend-specialist`
   - **Skills**: `api-patterns`, `database-design`
   - **Priority**: `P2`
@@ -297,9 +298,10 @@ Back-office order grid, sales analytics, and order mutations.
     - Display all orders in a paginated list layout.
     - Implement real-time filters: Verification Status (`pending`, `verified`, `rejected`) and Order Status.
     - Implement text search by Customer Name, Phone Number, or Transaction ID.
-  - **VERIFY**: ``
+  - **VERIFY**: `Completed. Created Server Action admin-orders.ts to handle paginated queries with text search and status filters. Implemented server-side wrapper in orders/page.tsx and a Crisp Tech Ledger styled OrdersGridView.tsx view. Includes a 250ms debounced search bar, category status filter dropdowns, and an advanced Order Details Lookup Modal displaying shipping address, payment proof variables, and full cart items. Passed npx tsc, eslint linting, and checklist audits.`
 
-- [ ] **TSK-016: Order Status Mutations (Server Actions)**
+
+- [x] **TSK-016: Order Status Mutations (Server Actions)**
   - **Agent**: `backend-specialist`
   - **Skills**: `api-patterns`
   - **Priority**: `P2`
@@ -310,14 +312,112 @@ Back-office order grid, sales analytics, and order mutations.
       - Verification triggers `verificationStatus: verified` and `orderStatus: confirmed`.
       - Rejection triggers `verificationStatus: rejected` and `orderStatus: pending_verification`.
     - Provide status progression trigger: Processing -> Shipped -> Delivered -> Cancelled.
-  - **VERIFY**: ``
+  - **VERIFY**: `Completed. Implemented secure server actions in admin-orders.ts for verification, rejection (with custom notes), and order status updates. Integrated verification/rejection panel and order status progress selectors into OrdersGridView details modal. Transition states are managed using useTransition, with page data refreshed instantly using router.refresh(). All code typechecks, lints, and passes checklist validations.`
+
+- [ ] **TSK-017: Admin Authentication Security & Audit Trail**
+  - **Agent**: `backend-specialist`
+  - **Skills**: `nodejs-best-practices`, `database-design`
+  - **Priority**: `P1`
+  - **Dependencies**: `TSK-004`, `TSK-016`
+  - **INPUT**: `prisma/schema.prisma`, `src/app/api/auth/[...nextauth]/route.ts`
+  - **OUTPUT**: `prisma/schema.prisma`, `src/app/actions/audit-log.ts`, `src/app/actions/admin-orders.ts`
+    - Update NextAuth configuration and credentials validation to enforce unique email logins for all admin users.
+    - Add `AuditLog` model to `prisma/schema.prisma` with fields: `id`, `adminEmail`, `action`, `targetModel`, `targetId`, `changes` (Json), and `createdAt`.
+    - Establish a server-side audit trail utility to record mutations (order status changes, stock adjustments, financial entries).
+    - Modify existing order and inventory Server Actions to log the email/name of the specific admin (e.g., Ahad, Sayem, Arif) performing mutations.
+  - **VERIFY**: `Check that actions run by authenticated admins are successfully recorded in the AuditLog database table with correct admin identity and timestamp.`
+
+- [ ] **TSK-018: Category Management Interface**
+  - **Agent**: `frontend-specialist`
+  - **Skills**: `frontend-design`, `api-patterns`
+  - **Priority**: `P2`
+  - **Dependencies**: `TSK-014`
+  - **INPUT**: `prisma/schema.prisma`, `src/app/admin/page.tsx`
+  - **OUTPUT**: `src/app/admin/categories/page.tsx`, `src/app/actions/admin-categories.ts`
+    - Ensure the `Category` schema supports fields: `id`, `name`, `slug`, `image` (URL/upload path), `text` (description text), and timestamps. Run prisma migration if needed.
+    - Implement full CRUD Server Actions (`createCategory`, `updateCategory`, `deleteCategory`) with input validation.
+    - Design a responsive Category CRUD data grid interface under `/admin/categories` with modals/forms to add, edit, or delete categories.
+  - **VERIFY**: `Confirm categories can be created, updated, and deleted dynamically. Verify database values change and reflect instantly in the public navigation navbar.`
+
+- [ ] **TSK-019: Product Inventory Management**
+  - **Agent**: `backend-specialist`
+  - **Skills**: `nodejs-best-practices`, `frontend-design`
+  - **Priority**: `P2`
+  - **Dependencies**: `TSK-018`
+  - **INPUT**: `prisma/schema.prisma`, `src/lib/upload.ts`
+  - **OUTPUT**: `src/app/admin/products/page.tsx`, `src/app/actions/admin-products.ts`
+    - Build a Product inventory management dashboard at `/admin/products` listing all educational toys.
+    - Implement CRUD Server Actions to manage `Product` records, editing fields: `title`, `description`, `price`, `categoryId`, `ageGroup`, `stock`, `benefits` (bullet points), and `featured` status.
+    - Integrate an upload dropzone using the `uploadMedia` file upload service to upload multiple images. Store the resulting asset paths in the database as a JSONB array.
+  - **VERIFY**: `Create a new product, upload multiple images, check JSONB array storage in database, and verify price/stock updates reflect dynamically in the catalog grid.`
+
+- [ ] **TSK-020: Omnichannel Order Creation**
+  - **Agent**: `backend-specialist`
+  - **Skills**: `api-patterns`, `database-design`
+  - **Priority**: `P1`
+  - **Dependencies**: `TSK-019`
+  - **INPUT**: `prisma/schema.prisma`, `src/app/actions/order.ts`
+  - **OUTPUT**: `src/app/admin/orders/create/page.tsx`, `src/app/actions/admin-create-order.ts`
+    - Build a manual checkout/order creation form under `/admin/orders/create` to handle manual or social media sales.
+    - Support fields for customer billing details (Name, Phone, optional Email, Full Address).
+    - Build a searchable product selection dropdown to add multiple items from the database catalog and input quantities.
+    - Add input fields for custom discounts, manual shipping adjustments, and pricing overrides.
+    - Include a `salesChannel` dropdown tag field containing options: `Facebook`, `Instagram`, `Direct`.
+  - **VERIFY**: `Submit a manual order, confirm it computes subtotal/totals correctly, decrements stock levels, and sets the salesChannel tag correctly in the database.`
 
 ---
 
-### Phase 6: System Verification & Polish
+### Phase 6: Omnichannel Sales & Financial Ledger
+Point of Sale logging, ledger schemas, and financial KPI calculators.
+
+- [ ] **TSK-021: Sell Dashboard (Direct POS)**
+  - **Agent**: `frontend-specialist`
+  - **Skills**: `frontend-design`, `clean-code`
+  - **Priority**: `P2`
+  - **Dependencies**: `TSK-020`
+  - **INPUT**: `prisma/schema.prisma`
+  - **OUTPUT**: `src/app/admin/pos/page.tsx`, `src/app/actions/pos-sales.ts`, `prisma/schema.prisma`
+    - Define a new `DirectSale` data model in `schema.prisma` with fields: `id`, `date` (DateTime), `product` (String/Product reference), `quantity` (Int), `price` (Float), `receivedBy` (String), `comment` (String), and timestamps.
+    - Build a lightweight Point of Sale (POS) ledger interface under `/admin/pos` using a data grid layout.
+    - Provide inline editing/creation controls for the data grid to support adding, updating, and deleting sales entries with instant validation.
+  - **VERIFY**: `Confirm POS direct sales update rows instantly, persist in the database, and correctly reflect in stock inventories.`
+
+- [ ] **TSK-022: Financial Accounting Module (Backend)**
+  - **Agent**: `database-architect`
+  - **Skills**: `database-design`, `api-patterns`
+  - **Priority**: `P1`
+  - **Dependencies**: `TSK-002`
+  - **INPUT**: `prisma/schema.prisma`
+  - **OUTPUT**: `prisma/schema.prisma`, `src/app/actions/finance.ts`
+    - Add financial models to `schema.prisma`:
+      - `Investment`: `id`, `date` (DateTime), `person` (String), `amount` (Float), `comment` (String), timestamps.
+      - `Expense`: `id`, `date` (DateTime), `paidBy` (String), `amount` (Float), `invoiceUrl` (String?), `comment` (String), timestamps.
+    - Create a server-side financial aggregator utility in `src/app/actions/finance.ts` containing functions to dynamically calculate:
+      - `Total Invest`: Sum of all `Investment` amounts.
+      - `Total Expense`: Sum of all `Expense` amounts.
+      - `Total Sell`: Sum of all `amountPaid` from `Order` plus `DirectSale` totals.
+      - `In Hand`: Computed as `(Total Invest + Total Sell) - Total Expense`.
+  - **VERIFY**: `Verify computed aggregations return exact calculations when compared to manual database entries.`
+
+- [ ] **TSK-023: Financial Accounting Module (Frontend)**
+  - **Agent**: `frontend-specialist`
+  - **Skills**: `frontend-design`, `nextjs-react-expert`
+  - **Priority**: `P2`
+  - **Dependencies**: `TSK-022`
+  - **INPUT**: `src/app/actions/finance.ts`, `src/lib/upload.ts`
+  - **OUTPUT**: `src/app/admin/finance/page.tsx`
+    - Design a clean "Finance" dashboard UI at `/admin/finance`.
+    - Create top-row KPI cards displaying dynamic metrics: Total Invest, Total Expense, Total Sell, and In Hand.
+    - Create a tabbed panel interface containing separate data grids for Investments list and Expenses list.
+    - Build transaction log forms for recording new Investments and Expenses, with an upload zone for Expense invoice URLs using `uploadMedia`.
+  - **VERIFY**: `Submit new investments and expenses, verify KPI cards update dynamically, and ensure uploaded invoice file URLs can be opened.`
+
+---
+
+### Phase 7: System Verification & Polish
 Linting, E2E testing, and UX audits.
 
-- [ ] **TSK-017: SEO Optimization & Metadata Integration**
+- [ ] **TSK-024: SEO Optimization & Metadata Integration**
   - **Agent**: `seo-specialist`
   - **Skills**: `seo-fundamentals`
   - **Priority**: `P3`
@@ -327,9 +427,9 @@ Linting, E2E testing, and UX audits.
     - Implement Open Graph and Twitter Card tags.
     - Set up descriptive title tags and meta descriptions for pages.
     - Ensure a single `<h1>` heading layout exists on each page.
-  - **VERIFY**: ``
+  - **VERIFY**: `Check meta-tag presence and verify search engines correctly resolve route metadata.`
 
-- [ ] **TSK-018: Checklist & Master Validations**
+- [ ] **TSK-025: Checklist & Master Validations**
   - **Agent**: `performance-optimizer`
   - **Skills**: `performance-profiling`, `webapp-testing`
   - **Priority**: `P3`
@@ -341,9 +441,10 @@ Linting, E2E testing, and UX audits.
       python .agents/scripts/checklist.py .
       ```
     - Check accessibility contrast ratios, touch target margins, and confirm the absolute ban of purple/violet hex codes has been strictly followed.
-  - **VERIFY**: ``
+  - **VERIFY**: `Ensure checklist.py script passes with zero errors on the final workspace codebase.`
 
 ---
+
 
 ## 🏁 Phase X: Final Validation Checklist
 Before launching deployment or completing the project workspace, verify the list of compliance criteria:
