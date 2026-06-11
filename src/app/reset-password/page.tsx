@@ -1,76 +1,63 @@
 'use client';
 
-import { useState, Suspense } from 'react';
+import { useState, useTransition, Suspense } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { signIn, getSession } from 'next-auth/react';
-import { useSearchParams } from 'next/navigation';
-import Link from 'next/link';
-import { KeyRound, Mail, AlertCircle, ArrowRight, CheckCircle } from 'lucide-react';
+import { useSearchParams, useRouter } from 'next/navigation';
+import { KeyRound, AlertCircle, ArrowRight } from 'lucide-react';
+import { executePasswordReset } from '@/app/actions/auth-recovery';
 
-const loginSchema = z.object({
-  email: z.string().email('Please enter a valid email address'),
-  password: z.string().min(6, 'Password must be at least 6 characters long'),
+const resetPasswordSchema = z.object({
+  password: z.string().min(6, 'Password must be at least 6 characters'),
+  confirmPassword: z.string().min(6, 'Confirm password must be at least 6 characters'),
+}).refine((data) => data.password === data.confirmPassword, {
+  message: "Passwords do not match",
+  path: ["confirmPassword"],
 });
 
-type LoginFormValues = z.infer<typeof loginSchema>;
+type ResetPasswordFormValues = z.infer<typeof resetPasswordSchema>;
 
-function LoginForm() {
+function ResetPasswordForm() {
+  const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
   const searchParams = useSearchParams();
-  const reset = searchParams.get('reset');
+  const router = useRouter();
+  const token = searchParams.get('token') || '';
 
   const {
     register,
     handleSubmit,
     formState: { errors },
-  } = useForm<LoginFormValues>({
-    resolver: zodResolver(loginSchema),
+  } = useForm<ResetPasswordFormValues>({
+    resolver: zodResolver(resetPasswordSchema),
     defaultValues: {
-      email: '',
       password: '',
+      confirmPassword: '',
     },
   });
 
-  const onSubmit = async (data: LoginFormValues) => {
-    setIsLoading(true);
+  const onSubmit = (data: ResetPasswordFormValues) => {
     setError(null);
 
-    try {
-      const result = await signIn('credentials', {
-        email: data.email,
-        password: data.password,
-        redirect: false,
-      });
-
-      if (result?.error) {
-        setError('Invalid email or password. Please try again.');
-        setIsLoading(false);
-      } else {
-        // Fetch session on the client to check user role details
-        const session = await getSession();
-        
-        // Parse callbackUrl from search parameters natively to avoid Next.js static de-opt warnings
-        const callbackUrl = typeof window !== 'undefined'
-          ? new URLSearchParams(window.location.search).get('callbackUrl')
-          : null;
-
-        // Force a full document reload to update Server Component layout session state
-        if (callbackUrl) {
-          window.location.replace(callbackUrl);
-        } else if (session?.user?.role === 'SUPER_ADMIN' || session?.user?.role === 'SUB_ADMIN') {
-          window.location.replace('/admin');
-        } else {
-          window.location.replace('/');
-        }
-      }
-    } catch (err) {
-      console.error('Login error:', err);
-      setError('An unexpected error occurred. Please try again.');
-      setIsLoading(false);
+    if (!token) {
+      setError('Reset token is missing. Please request a new password reset link.');
+      return;
     }
+
+    startTransition(async () => {
+      try {
+        const result = await executePasswordReset({ token, password: data.password });
+        if (result.success) {
+          router.push('/login?reset=true');
+        } else {
+          setError(result.error || 'Failed to reset password. The link may have expired or is invalid.');
+        }
+      } catch (err) {
+        console.error('Reset password error:', err);
+        setError('An unexpected error occurred. Please try again.');
+      }
+    });
   };
 
   return (
@@ -78,32 +65,24 @@ function LoginForm() {
       <div className="max-w-md w-full space-y-8 bg-white p-8 rounded-2xl shadow-xl border border-slate-100 relative overflow-hidden">
         {/* Aesthetic warm yellow background accent circle */}
         <div className="absolute top-0 right-0 w-32 h-32 bg-brand-yellow-light/40 rounded-full blur-2xl -mr-10 -mt-10" />
-        
+
         <div>
-          {/* Logo brand styling */}
           <div className="flex justify-center">
             <span className="text-4xl font-extrabold text-brand-blue tracking-tight select-none">
               Kidd<span className="text-brand-yellow">iq</span>
             </span>
           </div>
           <h2 className="mt-6 text-center text-2xl font-bold text-slate-800">
-            Welcome back!
+            Reset Password
           </h2>
           <p className="mt-2 text-center text-sm text-slate-500">
-            Log in to manage your account or checkout your order
+            Please enter your new password below.
           </p>
         </div>
 
-        {reset === 'true' && (
-          <div className="bg-green-50 border border-green-200 text-green-700 p-4 rounded-xl flex items-start space-x-2 text-sm animate-fade-in">
-            <CheckCircle className="w-5 h-5 shrink-0 mt-0.5 text-green-600" />
-            <span>Your password has been reset successfully. Please log in with your new password.</span>
-          </div>
-        )}
-
         <form className="mt-8 space-y-6" onSubmit={handleSubmit(onSubmit)}>
           {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-xl flex items-start space-x-2 text-sm animate-shake">
+            <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-xl flex items-start space-x-2 text-sm">
               <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
               <span>{error}</span>
             </div>
@@ -111,32 +90,8 @@ function LoginForm() {
 
           <div className="space-y-4">
             <div>
-              <label htmlFor="email" className="block text-sm font-semibold text-slate-700 mb-1">
-                Email Address
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
-                  <Mail className="w-5 h-5" />
-                </div>
-                <input
-                  {...register('email')}
-                  id="email"
-                  type="email"
-                  autoComplete="email"
-                  className={`block w-full h-12 pl-10 pr-3 border rounded-xl text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-blue focus:border-transparent transition-all duration-200 ${
-                    errors.email ? 'border-red-300 focus:ring-red-500' : 'border-slate-200'
-                  }`}
-                  placeholder="name@example.com"
-                />
-              </div>
-              {errors.email && (
-                <p className="mt-1 text-xs text-red-600 font-medium">{errors.email.message}</p>
-              )}
-            </div>
-
-            <div>
               <label htmlFor="password" className="block text-sm font-semibold text-slate-700 mb-1">
-                Password
+                New Password
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
@@ -146,16 +101,39 @@ function LoginForm() {
                   {...register('password')}
                   id="password"
                   type="password"
-                  autoComplete="current-password"
+                  autoComplete="new-password"
                   className={`block w-full h-12 pl-10 pr-3 border rounded-xl text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-blue focus:border-transparent transition-all duration-200 ${
                     errors.password ? 'border-red-300 focus:ring-red-500' : 'border-slate-200'
                   }`}
                   placeholder="••••••••"
                 />
               </div>
-              <Link href="/forgot-password" className="text-xs font-semibold text-brand-blue hover:underline block text-right mt-1.5">Forgot Password?</Link>
               {errors.password && (
                 <p className="mt-1 text-xs text-red-600 font-medium">{errors.password.message}</p>
+              )}
+            </div>
+
+            <div>
+              <label htmlFor="confirmPassword" className="block text-sm font-semibold text-slate-700 mb-1">
+                Confirm Password
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                  <KeyRound className="w-5 h-5" />
+                </div>
+                <input
+                  {...register('confirmPassword')}
+                  id="confirmPassword"
+                  type="password"
+                  autoComplete="new-password"
+                  className={`block w-full h-12 pl-10 pr-3 border rounded-xl text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-blue focus:border-transparent transition-all duration-200 ${
+                    errors.confirmPassword ? 'border-red-300 focus:ring-red-500' : 'border-slate-200'
+                  }`}
+                  placeholder="••••••••"
+                />
+              </div>
+              {errors.confirmPassword && (
+                <p className="mt-1 text-xs text-red-600 font-medium">{errors.confirmPassword.message}</p>
               )}
             </div>
           </div>
@@ -163,14 +141,14 @@ function LoginForm() {
           <div>
             <button
               type="submit"
-              disabled={isLoading}
+              disabled={isPending}
               className="group relative w-full h-12 flex justify-center items-center border border-transparent text-sm font-bold rounded-xl text-white bg-brand-blue hover:bg-brand-blue-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-blue transition-all duration-200 shadow-md shadow-brand-blue/20 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed select-none active:scale-[0.98]"
             >
-              {isLoading ? (
+              {isPending ? (
                 <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
               ) : (
                 <span className="flex items-center">
-                  Log In <ArrowRight className="w-4 h-4 ml-1.5 transition-transform group-hover:translate-x-1" />
+                  Reset Password <ArrowRight className="w-4 h-4 ml-1.5 transition-transform group-hover:translate-x-1" />
                 </span>
               )}
             </button>
@@ -181,14 +159,14 @@ function LoginForm() {
   );
 }
 
-export default function LoginPage() {
+export default function ResetPasswordPage() {
   return (
     <Suspense fallback={
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-brand-blue-light via-slate-50 to-brand-blue-light/30">
         <div className="w-10 h-10 border-4 border-brand-blue border-t-transparent rounded-full animate-spin" />
       </div>
     }>
-      <LoginForm />
+      <ResetPasswordForm />
     </Suspense>
   );
 }

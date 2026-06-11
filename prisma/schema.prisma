@@ -39,6 +39,12 @@ model User {
   role        Role       @default(CUSTOMER)
   permissions String[]   @default([])
   isActive    Boolean    @default(true)
+  phone            String?
+  district         String?
+  area             String?
+  fullAddress      String?
+  resetToken       String?
+  resetTokenExpiry DateTime?
   orders      Order[]
   reviews     Review[]
   wishlist    Wishlist[]

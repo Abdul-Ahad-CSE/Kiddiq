@@ -21,6 +21,7 @@ export const checkoutSchema = z.object({
   transactionId: z
     .string()
     .regex(/^[a-zA-Z0-9]{8,15}$/, "Transaction ID must be 8 to 15 alphanumeric characters"),
+  saveAddress: z.boolean().optional(),
 });
 
 export type CheckoutFormInput = z.infer<typeof checkoutSchema>;

@@ -15,8 +15,16 @@ const CheckoutClient = nextDynamic(() => import("./CheckoutClient"), {
 
 interface CheckoutWrapperProps {
   chattogramAreas: string[];
+  userProfile?: {
+    name: string;
+    email: string;
+    phone: string | null;
+    district: string | null;
+    area: string | null;
+    fullAddress: string | null;
+  } | null;
 }
 
-export default function CheckoutWrapper({ chattogramAreas }: CheckoutWrapperProps) {
-  return <CheckoutClient chattogramAreas={chattogramAreas} />;
+export default function CheckoutWrapper({ chattogramAreas, userProfile }: CheckoutWrapperProps) {
+  return <CheckoutClient chattogramAreas={chattogramAreas} userProfile={userProfile} />;
 }

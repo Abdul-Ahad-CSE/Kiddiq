@@ -16,7 +16,8 @@ interface CartItemInput {
 export async function createOrder(
   formData: CheckoutFormInput,
   items: CartItemInput[],
-  promoCode?: string | null
+  promoCode?: string | null,
+  saveAddressToProfile?: boolean
 ) {
   try {
     // 1. Server-side validation using the existing Zod schema
@@ -47,6 +48,7 @@ export async function createOrder(
       paymentMethod,
       senderNumber,
       transactionId,
+      saveAddress,
     } = validationResult.data;
 
     // 3. User authentication lookup
@@ -144,6 +146,19 @@ export async function createOrder(
         price: item.price,
         quantity: item.quantity,
       }));
+
+      // If customer is logged in and saveAddressToProfile (or form field saveAddress) is checked, update user profile
+      if (userId && (saveAddressToProfile || saveAddress)) {
+        await tx.user.update({
+          where: { id: userId },
+          data: {
+            phone,
+            district,
+            area,
+            fullAddress,
+          },
+        });
+      }
 
       // Create Order
       const newOrder = await tx.order.create({

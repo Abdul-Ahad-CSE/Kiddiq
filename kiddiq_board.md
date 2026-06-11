@@ -490,12 +490,28 @@ Customer registration, shipping profile synchronization, self-service dashboard,
     - Log token resetLink to console as placeholder.
   - **VERIFY**: `Submit forgot-password form, copy generated token from server console logs, navigate to reset URL, input new password, and verify you can login using the updated password.`
 
+- [ ] **TSK-025: Universal "Track Order" & Profile History**
+  - **Agent**: `fullstack-specialist`
+  - **Skills**: `clean-code`, `frontend-design`, `database-design`
+  - **Priority**: `P1`
+  - **Dependencies**: `TSK-013`, `TSK-024`
+  - **INPUT**: `src/app/track-order/page.tsx`, `src/app/profile/page.tsx`
+  - **OUTPUT**: `src/app/track-order/page.tsx`, `src/app/profile/page.tsx`, `src/components/Navbar.tsx`, `src/components/OrderListCard.tsx`
+    - Add "Track Order" link in the global Navbar header.
+    - If user is logged in, bypass guest form and show all orders linked to their account/email/phone.
+    - If user is a guest, render a search form asking for "Billing Mobile Number" (enforce Bangladeshi mobile regex).
+    - Query and show guest orders where `phone` matches, sorted by newest first.
+    - Render orders list of summary cards (ID, Date, Amount, Dynamic Status Badge, "View Details" button linking to `/order-status/[id]`).
+    - Integrate the same list card UI under a new "Order History" section/tab in `/profile`.
+    - Strictly comply with Purple Ban and Touch Targets (min 44px).
+  - **VERIFY**: `Access /track-order as a guest, search with a valid order phone number, and verify the list shows correct orders and links. Log in as a customer and check that the order history appears directly both on /track-order and the /profile dashboard without re-entering the phone.`
+
 ---
 
 ### Phase 8: System Verification & Polish
 Linting, E2E testing, and UX audits.
 
-- [ ] **TSK-025: SEO Optimization & Metadata Integration**
+- [ ] **TSK-026: SEO Optimization & Metadata Integration**
   - **Agent**: `seo-specialist`
   - **Skills**: `seo-fundamentals`
   - **Priority**: `P3`
@@ -507,7 +523,7 @@ Linting, E2E testing, and UX audits.
     - Ensure a single `<h1>` heading layout exists on each page.
   - **VERIFY**: `Check meta-tag presence and verify search engines correctly resolve route metadata.`
 
-- [ ] **TSK-026: Checklist & Master Validations**
+- [ ] **TSK-027: Checklist & Master Validations**
   - **Agent**: `performance-optimizer`
   - **Skills**: `performance-profiling`, `webapp-testing`
   - **Priority**: `P3`

@@ -1,73 +1,65 @@
 'use client';
 
-import { useState, Suspense } from 'react';
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { signIn, getSession } from 'next-auth/react';
-import { useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
+import { registerCustomer } from '@/app/actions/auth-register';
+import { signIn } from 'next-auth/react';
+import { KeyRound, Mail, User, AlertCircle, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
-import { KeyRound, Mail, AlertCircle, ArrowRight, CheckCircle } from 'lucide-react';
 
-const loginSchema = z.object({
+const registerSchema = z.object({
+  name: z.string().min(2, 'Name must be at least 2 characters'),
   email: z.string().email('Please enter a valid email address'),
-  password: z.string().min(6, 'Password must be at least 6 characters long'),
+  password: z.string().min(6, 'Password must be at least 6 characters'),
 });
 
-type LoginFormValues = z.infer<typeof loginSchema>;
+type RegisterFormValues = z.infer<typeof registerSchema>;
 
-function LoginForm() {
+export default function RegisterPage() {
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const searchParams = useSearchParams();
-  const reset = searchParams.get('reset');
+  const router = useRouter();
 
   const {
     register,
     handleSubmit,
     formState: { errors },
-  } = useForm<LoginFormValues>({
-    resolver: zodResolver(loginSchema),
+  } = useForm<RegisterFormValues>({
+    resolver: zodResolver(registerSchema),
     defaultValues: {
+      name: '',
       email: '',
       password: '',
     },
   });
 
-  const onSubmit = async (data: LoginFormValues) => {
+  const onSubmit = async (data: RegisterFormValues) => {
     setIsLoading(true);
     setError(null);
 
     try {
-      const result = await signIn('credentials', {
-        email: data.email,
-        password: data.password,
-        redirect: false,
-      });
+      const result = await registerCustomer(data);
 
-      if (result?.error) {
-        setError('Invalid email or password. Please try again.');
-        setIsLoading(false);
-      } else {
-        // Fetch session on the client to check user role details
-        const session = await getSession();
-        
-        // Parse callbackUrl from search parameters natively to avoid Next.js static de-opt warnings
-        const callbackUrl = typeof window !== 'undefined'
-          ? new URLSearchParams(window.location.search).get('callbackUrl')
-          : null;
-
-        // Force a full document reload to update Server Component layout session state
-        if (callbackUrl) {
-          window.location.replace(callbackUrl);
-        } else if (session?.user?.role === 'SUPER_ADMIN' || session?.user?.role === 'SUB_ADMIN') {
-          window.location.replace('/admin');
+      if (result.success) {
+        const signInResult = await signIn('credentials', {
+          redirect: false,
+          email: data.email,
+          password: data.password,
+        });
+        if (signInResult?.error) {
+          router.push('/login');
         } else {
           window.location.replace('/');
         }
+      } else {
+        setError(result.error || 'Registration failed. Please try again.');
+        setIsLoading(false);
       }
     } catch (err) {
-      console.error('Login error:', err);
+      console.error('Registration error:', err);
       setError('An unexpected error occurred. Please try again.');
       setIsLoading(false);
     }
@@ -87,29 +79,46 @@ function LoginForm() {
             </span>
           </div>
           <h2 className="mt-6 text-center text-2xl font-bold text-slate-800">
-            Welcome back!
+            Create an Account
           </h2>
           <p className="mt-2 text-center text-sm text-slate-500">
-            Log in to manage your account or checkout your order
+            Sign up to start learning and shopping today
           </p>
         </div>
 
-        {reset === 'true' && (
-          <div className="bg-green-50 border border-green-200 text-green-700 p-4 rounded-xl flex items-start space-x-2 text-sm animate-fade-in">
-            <CheckCircle className="w-5 h-5 shrink-0 mt-0.5 text-green-600" />
-            <span>Your password has been reset successfully. Please log in with your new password.</span>
-          </div>
-        )}
-
         <form className="mt-8 space-y-6" onSubmit={handleSubmit(onSubmit)}>
           {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-xl flex items-start space-x-2 text-sm animate-shake">
+            <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-xl flex items-start space-x-2 text-sm">
               <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
               <span>{error}</span>
             </div>
           )}
 
           <div className="space-y-4">
+            <div>
+              <label htmlFor="name" className="block text-sm font-semibold text-slate-700 mb-1">
+                Full Name
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                  <User className="w-5 h-5" />
+                </div>
+                <input
+                  {...register('name')}
+                  id="name"
+                  type="text"
+                  autoComplete="name"
+                  className={`block w-full h-12 pl-10 pr-3 border rounded-xl text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-blue focus:border-transparent transition-all duration-200 ${
+                    errors.name ? 'border-red-300 focus:ring-red-500' : 'border-slate-200'
+                  }`}
+                  placeholder="John Doe"
+                />
+              </div>
+              {errors.name && (
+                <p className="mt-1 text-xs text-red-600 font-medium">{errors.name.message}</p>
+              )}
+            </div>
+
             <div>
               <label htmlFor="email" className="block text-sm font-semibold text-slate-700 mb-1">
                 Email Address
@@ -146,14 +155,13 @@ function LoginForm() {
                   {...register('password')}
                   id="password"
                   type="password"
-                  autoComplete="current-password"
+                  autoComplete="new-password"
                   className={`block w-full h-12 pl-10 pr-3 border rounded-xl text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-blue focus:border-transparent transition-all duration-200 ${
                     errors.password ? 'border-red-300 focus:ring-red-500' : 'border-slate-200'
                   }`}
                   placeholder="••••••••"
                 />
               </div>
-              <Link href="/forgot-password" className="text-xs font-semibold text-brand-blue hover:underline block text-right mt-1.5">Forgot Password?</Link>
               {errors.password && (
                 <p className="mt-1 text-xs text-red-600 font-medium">{errors.password.message}</p>
               )}
@@ -164,31 +172,26 @@ function LoginForm() {
             <button
               type="submit"
               disabled={isLoading}
-              className="group relative w-full h-12 flex justify-center items-center border border-transparent text-sm font-bold rounded-xl text-white bg-brand-blue hover:bg-brand-blue-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-blue transition-all duration-200 shadow-md shadow-brand-blue/20 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed select-none active:scale-[0.98]"
+              className="group relative w-full h-12 flex justify-center items-center px-4 border border-transparent text-sm font-bold rounded-xl text-white bg-brand-blue hover:bg-brand-blue-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-blue transition-all duration-200 shadow-md shadow-brand-blue/20 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed select-none active:scale-[0.98]"
             >
               {isLoading ? (
                 <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
               ) : (
                 <span className="flex items-center">
-                  Log In <ArrowRight className="w-4 h-4 ml-1.5 transition-transform group-hover:translate-x-1" />
+                  Sign Up <ArrowRight className="w-4 h-4 ml-1.5 transition-transform group-hover:translate-x-1" />
                 </span>
               )}
             </button>
           </div>
+
+          <div className="text-center text-sm text-slate-600 mt-4">
+            Already have an account?{' '}
+            <Link href="/login" className="font-semibold text-brand-blue hover:underline">
+              Log In
+            </Link>
+          </div>
         </form>
       </div>
     </div>
-  );
-}
-
-export default function LoginPage() {
-  return (
-    <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-brand-blue-light via-slate-50 to-brand-blue-light/30">
-        <div className="w-10 h-10 border-4 border-brand-blue border-t-transparent rounded-full animate-spin" />
-      </div>
-    }>
-      <LoginForm />
-    </Suspense>
   );
 }

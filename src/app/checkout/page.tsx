@@ -1,6 +1,8 @@
 import React from "react";
 import prisma from "@/lib/db";
 import CheckoutWrapper from "./CheckoutWrapper";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
@@ -10,6 +12,23 @@ export const metadata = {
 };
 
 export default async function CheckoutPage() {
+  // Fetch session
+  const session = await getServerSession(authOptions);
+  let userProfile = null;
+  if (session?.user?.id) {
+    userProfile = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: {
+        name: true,
+        email: true,
+        phone: true,
+        district: true,
+        area: true,
+        fullAddress: true,
+      },
+    });
+  }
+
   // Fetch all Chattogram areas from Prisma
   const areas = await prisma.deliveryArea.findMany({
     where: {
@@ -37,7 +56,7 @@ export default async function CheckoutPage() {
         </p>
       </div>
 
-      <CheckoutWrapper chattogramAreas={chattogramAreas} />
+      <CheckoutWrapper chattogramAreas={chattogramAreas} userProfile={userProfile} />
     </div>
   );
 }

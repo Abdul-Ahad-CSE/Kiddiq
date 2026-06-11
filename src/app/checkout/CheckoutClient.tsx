@@ -83,9 +83,17 @@ const BANGLADESH_DISTRICTS = [
 
 interface CheckoutClientProps {
   chattogramAreas: string[];
+  userProfile?: {
+    name: string;
+    email: string;
+    phone: string | null;
+    district: string | null;
+    area: string | null;
+    fullAddress: string | null;
+  } | null;
 }
 
-export default function CheckoutClient({ chattogramAreas }: CheckoutClientProps) {
+export default function CheckoutClient({ chattogramAreas, userProfile }: CheckoutClientProps) {
   const router = useRouter();
   const cartItems = useCartState((state) => state.items, []);
   const [isOtherArea, setIsOtherArea] = useState(false);
@@ -166,6 +174,22 @@ export default function CheckoutClient({ chattogramAreas }: CheckoutClientProps)
     resolver: zodResolver(checkoutSchema),
     mode: "onChange"
   });
+
+  useEffect(() => {
+    if (userProfile) {
+      if (userProfile.name) setValue("customerName", userProfile.name);
+      if (userProfile.email) setValue("email", userProfile.email);
+      if (userProfile.phone) setValue("phone", userProfile.phone);
+      if (userProfile.district) setValue("district", userProfile.district);
+      if (userProfile.area) {
+        if (userProfile.district === "Chattogram" && !chattogramAreas.includes(userProfile.area)) {
+          setTimeout(() => setIsOtherArea(true), 0);
+        }
+        setValue("area", userProfile.area);
+      }
+      if (userProfile.fullAddress) setValue("fullAddress", userProfile.fullAddress);
+    }
+  }, [userProfile, setValue, chattogramAreas]);
 
   const watchedDistrict = useWatch({ control, name: "district" });
   const watchedArea = useWatch({ control, name: "area" });
@@ -485,6 +509,22 @@ export default function CheckoutClient({ chattogramAreas }: CheckoutClientProps)
             <p className="mt-1.5 text-xs font-semibold text-rose-500">{errors.fullAddress.message}</p>
           )}
         </div>
+
+        {/* Save Address Checkbox */}
+        {userProfile && (
+          <div className="flex items-center gap-3 mt-4 select-none">
+            <input
+              id="saveAddress"
+              type="checkbox"
+              defaultChecked
+              {...register("saveAddress")}
+              className="h-5 w-5 rounded-md border-slate-200 text-brand-blue focus:ring-brand-blue/20 cursor-pointer"
+            />
+            <label htmlFor="saveAddress" className="text-sm font-semibold text-slate-700 cursor-pointer">
+              Save this address to my profile for future orders
+            </label>
+          </div>
+        )}
 
         {/* Payment Plan Selector */}
         <div className="border-t border-slate-100 pt-6 space-y-4">

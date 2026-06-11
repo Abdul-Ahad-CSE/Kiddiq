@@ -179,6 +179,16 @@ export default function Navbar({ session }: NavbarProps) {
                 </div>
 
                 {/* Role Specific Actions */}
+                {session.user.role === "CUSTOMER" && (
+                  <Link
+                    href="/profile"
+                    title="My Profile"
+                    className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-blue-light text-brand-blue transition-colors hover:bg-brand-blue hover:text-white"
+                  >
+                    <User className="h-5 w-5" />
+                  </Link>
+                )}
+
                 {(session.user.role === "SUPER_ADMIN" || session.user.role === "SUB_ADMIN") && (
                   <Link
                     href="/admin"
@@ -198,13 +208,21 @@ export default function Navbar({ session }: NavbarProps) {
                 </button>
               </div>
             ) : (
-              <Link
-                href="/login"
-                className="flex items-center gap-1.5 rounded-full bg-brand-blue px-4 py-2 text-sm font-semibold text-white transition-all hover:bg-brand-blue-dark hover:shadow-sm"
-              >
-                <User className="h-4 w-4" />
-                Log In
-              </Link>
+              <div className="flex items-center gap-2.5">
+                <Link
+                  href="/login"
+                  className="flex items-center justify-center gap-1.5 rounded-full border border-slate-200 px-4 text-sm font-semibold text-slate-700 transition-all hover:bg-slate-50 hover:shadow-xs h-11"
+                >
+                  <User className="h-4 w-4" />
+                  Log In
+                </Link>
+                <Link
+                  href="/register"
+                  className="flex items-center justify-center gap-1.5 rounded-full bg-brand-blue px-5 text-sm font-semibold text-white transition-all hover:bg-brand-blue-dark hover:shadow-sm h-11"
+                >
+                  Register
+                </Link>
+              </div>
             )}
           </div>
 
@@ -275,6 +293,16 @@ export default function Navbar({ session }: NavbarProps) {
                   </div>
 
                   <div className="flex gap-2">
+                    {session.user.role === "CUSTOMER" && (
+                      <Link
+                        href="/profile"
+                        className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-brand-blue-light py-2.5 text-sm font-semibold text-brand-blue"
+                      >
+                        <User className="h-4 w-4" />
+                        My Profile
+                      </Link>
+                    )}
+
                     {(session.user.role === "SUPER_ADMIN" || session.user.role === "SUB_ADMIN") && (
                       <Link
                         href="/admin"
@@ -295,13 +323,21 @@ export default function Navbar({ session }: NavbarProps) {
                   </div>
                 </div>
               ) : (
-                <Link
-                  href="/login"
-                  className="flex w-full items-center justify-center gap-2 rounded-lg bg-brand-blue py-3 text-center text-sm font-bold text-white hover:bg-brand-blue-dark"
-                >
-                  <User className="h-4.5 w-4.5" />
-                  Log In / Sign Up
-                </Link>
+                <div className="flex flex-col gap-2">
+                  <Link
+                    href="/login"
+                    className="flex w-full items-center justify-center gap-2 rounded-lg border border-slate-200 py-3 text-center text-sm font-bold text-slate-700 hover:bg-slate-50 h-12"
+                  >
+                    <User className="h-4.5 w-4.5" />
+                    Log In
+                  </Link>
+                  <Link
+                    href="/register"
+                    className="flex w-full items-center justify-center gap-2 rounded-lg bg-brand-blue py-3 text-center text-sm font-bold text-white hover:bg-brand-blue-dark h-12"
+                  >
+                    Register
+                  </Link>
+                </div>
               )}
             </div>
           </nav>
