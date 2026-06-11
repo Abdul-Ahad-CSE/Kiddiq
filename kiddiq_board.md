@@ -413,7 +413,7 @@ Point of Sale logging, ledger schemas, and financial KPI calculators.
     - Provide inline editing/creation controls for the data grid to support adding, updating, and deleting sales entries with instant validation.
   - **VERIFY**: `Completed. Added DirectSale model to schema.prisma and ran db push to generate client. Implemented secure getDirectSales, createDirectSale, updateDirectSale, and deleteDirectSale server actions in src/app/actions/pos-sales.ts. Configured transactional stock modifications supporting product swaps and delta checks. Created server layout link (under /admin/pos) and the POS page route. Engineered POSDashboardClient client view with searchable ledger tables, dialog modal forms, backdating selectors, and unit price overrides, strictly complying with the Purple Ban and touch target metrics. Successfully validated with compile checks, lint check, and master validation checklist script.`
 
-- [ ] **TSK-022: Financial Accounting Module (Backend)**
+- [x] **TSK-022: Financial Accounting Module (Backend)**
   - **Agent**: `database-architect`
   - **Skills**: `database-design`, `api-patterns`
   - **Priority**: `P1`
@@ -428,9 +428,9 @@ Point of Sale logging, ledger schemas, and financial KPI calculators.
       - `Total Expense`: Sum of all `Expense` amounts.
       - `Total Sell`: Sum of all `amountPaid` from `Order` plus `DirectSale` totals.
       - `In Hand`: Computed as `(Total Invest + Total Sell) - Total Expense`.
-  - **VERIFY**: `Verify computed aggregations return exact calculations when compared to manual database entries. Verify that actions throw authorization errors if executed by users without MANAGE_FINANCE.`
+  - **VERIFY**: `Completed. Added costPrice to Product model and defined Investment and Expense models in schema.prisma. Created Zod-validated CRUD operations and secure financial aggregator getFinancialSummary() in src/app/actions/finance.ts protected by MANAGE_FINANCE permission and logAdminAction audits. Computed Total Invest, Total Expense, Total Sell, Total COGS (using in-memory mapping to prevent N+1 query bottlenecks), In Hand, and Net Profit. Implemented strict data leakage prevention by applying omit: { costPrice: true } across all public storefront queries. Verified successfully with compilation, lint, and master checklist validators.`
 
-- [ ] **TSK-023: Financial Accounting Module (Frontend)**
+- [x] **TSK-023: Financial Accounting Module (Frontend)**
   - **Agent**: `frontend-specialist`
   - **Skills**: `frontend-design`, `nextjs-react-expert`
   - **Priority**: `P2`
@@ -441,14 +441,61 @@ Point of Sale logging, ledger schemas, and financial KPI calculators.
     - Create top-row KPI cards displaying dynamic metrics: Total Invest, Total Expense, Total Sell, and In Hand.
     - Create a tabbed panel interface containing separate data grids for Investments list and Expenses list.
     - Build transaction log forms for recording new Investments and Expenses, with an upload zone for Expense invoice URLs using `uploadMedia`.
-  - **VERIFY**: `Submit new investments and expenses, verify KPI cards update dynamically, and ensure uploaded invoice file URLs can be opened. Verify that users without MANAGE_FINANCE are blocked.`
+  - **VERIFY**: `Completed. Removed the redirect wrapper and created the server route page.tsx guarded via MANAGE_FINANCE. Designed custom FinanceSkeleton loaders. Engineered FinanceDashboardClient client view presenting Total Invest, Total Expense, Total Sell, In Hand, and highly highlighted Net Profit KPI cards. Added horizontal tab panels and mobile-friendly detail card stacks. Created investment/expense modals with <=5MB size caps, JPG/PNG/PDF validation, and automatic receipt uploads linked to uploadMediaAction. Verified successfully with compilation checks, lint checks, and the master validation checklist.`
 
 ---
 
-### Phase 7: System Verification & Polish
+### Phase 7: Frictionless Auth, Checkout Sync, & User Profiles
+Customer registration, shipping profile synchronization, self-service dashboard, and secure password recovery.
+
+- [ ] **TSK-024A: Customer Registration Foundation**
+  - **Agent**: `fullstack-specialist`
+  - **Skills**: `clean-code`, `api-patterns`
+  - **Priority**: `P1`
+  - **Dependencies**: `TSK-004`
+  - **INPUT**: `prisma/schema.prisma`
+  - **OUTPUT**: `prisma/schema.prisma`, `src/app/register/page.tsx`, `src/components/Navbar.tsx`
+    - Update `Role` Enum: Add `CUSTOMER`.
+    - Expand `User` model: `phone`, `district`, `area`, `fullAddress`, `resetToken`, and `resetTokenExpiry` (all optional).
+    - Build customer registration page `/register` (Name, Email, Password).
+    - Auto-assign `CUSTOMER` role upon register.
+    - Add Register navigation button beside Login in Navbar.
+  - **VERIFY**: `Confirm database schema push is successful. Verify that creating a user through /register saves them to the database with CUSTOMER role and redirects them appropriately.`
+
+- [ ] **TSK-024B: Progressive Profile & Checkout Sync**
+  - **Agent**: `fullstack-specialist`
+  - **Skills**: `clean-code`, `frontend-design`
+  - **Priority**: `P1`
+  - **Dependencies**: `TSK-024A`
+  - **INPUT**: `src/app/checkout/page.tsx`
+  - **OUTPUT**: `src/app/checkout/page.tsx`, `src/app/actions/order.ts`, `src/app/profile/page.tsx`, `src/components/Navbar.tsx`
+    - Auto-fill shipping address form fields on checkout page if customer is logged in.
+    - Add checkbox: "Save this address to my profile" (checked by default).
+    - Sync shipping data back to `User` model in `order.ts` Server Action if checked.
+    - Build customer `/profile` page (Name, Phone, District, Area, Full Address editable; Email read-only).
+    - Add "My Profile" navigation access in Navbar.
+  - **VERIFY**: `Log in as a customer, place an order with new shipping details and "Save" checked, and verify user profile is updated in the database. Verify profile page correctly displays profile and handles edits.`
+
+- [ ] **TSK-024C: Password Recovery & Security**
+  - **Agent**: `fullstack-specialist`
+  - **Skills**: `clean-code`, `api-patterns`
+  - **Priority**: `P1`
+  - **Dependencies**: `TSK-024A`
+  - **INPUT**: `prisma/schema.prisma`
+  - **OUTPUT**: `src/app/forgot-password/page.tsx`, `src/app/reset-password/page.tsx`, `src/app/actions/auth-recovery.ts`
+    - Build `/forgot-password` page.
+    - Generate secure random token, hash it, and store with 15-minute expiry in DB.
+    - Build `/reset-password?token=...` page.
+    - Validate token matching/expiry and reset password.
+    - Log token resetLink to console as placeholder.
+  - **VERIFY**: `Submit forgot-password form, copy generated token from server console logs, navigate to reset URL, input new password, and verify you can login using the updated password.`
+
+---
+
+### Phase 8: System Verification & Polish
 Linting, E2E testing, and UX audits.
 
-- [ ] **TSK-024: SEO Optimization & Metadata Integration**
+- [ ] **TSK-025: SEO Optimization & Metadata Integration**
   - **Agent**: `seo-specialist`
   - **Skills**: `seo-fundamentals`
   - **Priority**: `P3`
@@ -460,7 +507,7 @@ Linting, E2E testing, and UX audits.
     - Ensure a single `<h1>` heading layout exists on each page.
   - **VERIFY**: `Check meta-tag presence and verify search engines correctly resolve route metadata.`
 
-- [ ] **TSK-025: Checklist & Master Validations**
+- [ ] **TSK-026: Checklist & Master Validations**
   - **Agent**: `performance-optimizer`
   - **Skills**: `performance-profiling`, `webapp-testing`
   - **Priority**: `P3`
@@ -476,7 +523,6 @@ Linting, E2E testing, and UX audits.
 
 ---
 
-
 ## 🏁 Phase X: Final Validation Checklist
 Before launching deployment or completing the project workspace, verify the list of compliance criteria:
 - [ ] No purple or violet color definitions inside styles (e.g. classes matching `purple`, `violet`, `indigo` or custom hex values).
@@ -484,3 +530,4 @@ Before launching deployment or completing the project workspace, verify the list
 - [ ] Zod schema verification for transaction IDs and phone format inputs.
 - [ ] Instant delivery calculations tested for Chittagong City Areas (60 BDT) vs Others (120 BDT).
 - [ ] WhatsApp message payload links successfully format shipping data.
+

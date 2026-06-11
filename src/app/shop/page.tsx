@@ -21,6 +21,9 @@ export default async function ShopPage() {
       include: {
         category: true,
       },
+      omit: {
+        costPrice: true,
+      },
       orderBy: { createdAt: "desc" },
     }),
   ]);

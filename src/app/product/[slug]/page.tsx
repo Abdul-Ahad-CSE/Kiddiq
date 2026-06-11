@@ -15,6 +15,7 @@ export async function generateMetadata({ params }: PageProps) {
   const resolvedParams = await params;
   const product = await prisma.product.findUnique({
     where: { slug: resolvedParams.slug },
+    omit: { costPrice: true },
   });
 
   if (!product) {
@@ -46,6 +47,7 @@ export default async function ProductDetailPage({ params }: PageProps) {
     include: {
       category: true,
     },
+    omit: { costPrice: true },
   });
 
   // Handle 404 state if product doesn't exist
@@ -64,6 +66,9 @@ export default async function ProductDetailPage({ params }: PageProps) {
     take: 4,
     include: {
       category: true,
+    },
+    omit: {
+      costPrice: true,
     },
     orderBy: {
       createdAt: "desc",
@@ -84,6 +89,9 @@ export default async function ProductDetailPage({ params }: PageProps) {
       take: 4 - finalRelatedProducts.length,
       include: {
         category: true,
+      },
+      omit: {
+        costPrice: true,
       },
       orderBy: {
         createdAt: "desc",

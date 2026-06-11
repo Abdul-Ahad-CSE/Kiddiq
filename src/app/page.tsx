@@ -26,6 +26,7 @@ export default async function Home() {
   const products = await prisma.product.findMany({
     where: { featured: true },
     take: 4,
+    omit: { costPrice: true },
   });
 
   // Category specific mapping details

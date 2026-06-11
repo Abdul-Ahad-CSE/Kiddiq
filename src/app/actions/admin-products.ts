@@ -13,6 +13,7 @@ const productSchema = z.object({
     .regex(/^[a-z0-9-]+$/, "Slug must be lowercase alphanumeric and hyphens only"),
   description: z.string().min(5, "Description must be at least 5 characters"),
   price: z.number().positive("Price must be a positive number"),
+  costPrice: z.number().nonnegative("Buy-in cost cannot be negative").default(0),
   categoryId: z.string().min(1, "Please select a category"),
   ageGroup: z.string().min(1, "Please select an age group"),
   images: z.array(z.string().url("Must be a valid image URL")).min(1, "At least one product image is required"),
@@ -26,6 +27,7 @@ export async function createProduct(data: {
   slug: string;
   description: string;
   price: number;
+  costPrice: number;
   categoryId: string;
   ageGroup: string;
   images: string[];
@@ -53,6 +55,7 @@ export async function createProduct(data: {
         slug: validated.slug.trim(),
         description: validated.description.trim(),
         price: validated.price,
+        costPrice: validated.costPrice,
         categoryId: validated.categoryId,
         ageGroup: validated.ageGroup,
         images: validated.images, // JSON array
@@ -68,7 +71,7 @@ export async function createProduct(data: {
       "CREATE_PRODUCT",
       "Product",
       newProduct.id,
-      { title: newProduct.title, slug: newProduct.slug }
+      { title: newProduct.title, slug: newProduct.slug, costPrice: newProduct.costPrice }
     );
 
     return { success: true, product: newProduct };
@@ -89,6 +92,7 @@ export async function updateProduct(
     slug: string;
     description: string;
     price: number;
+    costPrice: number;
     categoryId: string;
     ageGroup: string;
     images: string[];
@@ -128,6 +132,7 @@ export async function updateProduct(
         slug: validated.slug.trim(),
         description: validated.description.trim(),
         price: validated.price,
+        costPrice: validated.costPrice,
         categoryId: validated.categoryId,
         ageGroup: validated.ageGroup,
         images: validated.images,
@@ -144,8 +149,8 @@ export async function updateProduct(
       "Product",
       id,
       { 
-        old: { title: product.title, slug: product.slug, price: product.price, stock: product.stock },
-        new: { title: updatedProduct.title, slug: updatedProduct.slug, price: updatedProduct.price, stock: updatedProduct.stock } 
+        old: { title: product.title, slug: product.slug, price: product.price, stock: product.stock, costPrice: product.costPrice },
+        new: { title: updatedProduct.title, slug: updatedProduct.slug, price: updatedProduct.price, stock: updatedProduct.stock, costPrice: updatedProduct.costPrice } 
       }
     );
 

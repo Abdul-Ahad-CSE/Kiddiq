@@ -35,6 +35,7 @@ interface Product {
   slug: string;
   description: string;
   price: number;
+  costPrice: number;
   categoryId: string;
   ageGroup: string;
   images: string[];
@@ -82,6 +83,7 @@ export default function ProductManagementClient({
     slug: "",
     description: "",
     price: 0,
+    costPrice: 0,
     categoryId: "",
     ageGroup: "",
     images: [] as string[],
@@ -123,6 +125,7 @@ export default function ProductManagementClient({
       slug: "",
       description: "",
       price: 0,
+      costPrice: 0,
       categoryId: categories[0]?.id || "",
       ageGroup: AGE_GROUPS[0],
       images: [],
@@ -145,6 +148,7 @@ export default function ProductManagementClient({
       slug: product.slug,
       description: product.description,
       price: product.price,
+      costPrice: product.costPrice || 0,
       categoryId: product.categoryId,
       ageGroup: product.ageGroup,
       images: product.images,
@@ -182,6 +186,10 @@ export default function ProductManagementClient({
     }
     if (formState.price <= 0) {
       setErrorMsg("Product price must be a positive number.");
+      return;
+    }
+    if (formState.costPrice < 0) {
+      setErrorMsg("Product buyin cost cannot be negative.");
       return;
     }
     if (formState.stock < 0) {
@@ -619,6 +627,25 @@ export default function ProductManagementClient({
                       setFormState((prev) => ({ ...prev, price: parseFloat(e.target.value) || 0 }))
                     }
                     min="1"
+                    className="w-full h-12 px-4 border border-slate-200 rounded-xl text-sm text-slate-800 placeholder-slate-400 font-sans focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    required
+                  />
+                </div>
+
+                {/* Wholesale Cost */}
+                <div className="space-y-1.5">
+                  <label htmlFor="product-costPrice" className="text-xs font-bold text-slate-700 font-sans">
+                    Wholesale Buy-in Cost (৳ BDT) <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    id="product-costPrice"
+                    type="number"
+                    placeholder="e.g. 500"
+                    value={formState.costPrice === 0 ? "0" : formState.costPrice || ""}
+                    onChange={(e) =>
+                      setFormState((prev) => ({ ...prev, costPrice: parseFloat(e.target.value) || 0 }))
+                    }
+                    min="0"
                     className="w-full h-12 px-4 border border-slate-200 rounded-xl text-sm text-slate-800 placeholder-slate-400 font-sans focus:outline-none focus:ring-2 focus:ring-blue-500"
                     required
                   />
