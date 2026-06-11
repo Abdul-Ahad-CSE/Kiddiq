@@ -18,6 +18,11 @@ declare global {
   var prismaGlobal: undefined | ReturnType<typeof prismaClientSingleton>;
 }
 
+// Clear global cache if the newly added directSale model is not present in the cached instance
+if (globalThis.prismaGlobal && !('directSale' in globalThis.prismaGlobal)) {
+  globalThis.prismaGlobal = undefined;
+}
+
 const prisma = globalThis.prismaGlobal ?? prismaClientSingleton();
 
 export default prisma;

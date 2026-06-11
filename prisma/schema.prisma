@@ -58,22 +58,23 @@ model Category {
 }
 
 model Product {
-  id          String     @id @default(uuid())
+  id          String       @id @default(uuid())
   title       String
-  slug        String     @unique
+  slug        String       @unique
   description String
   price       Float
   categoryId  String
-  category    Category   @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  category    Category     @relation(fields: [categoryId], references: [id], onDelete: Cascade)
   ageGroup    String
-  images      Json       // Array of image URLs (JSON array)
+  images      Json         // Array of image URLs (JSON array)
   stock       Int
-  benefits    String     // Bullet points or description of benefits
-  featured    Boolean    @default(false)
+  benefits    String       // Bullet points or description of benefits
+  featured    Boolean      @default(false)
   reviews     Review[]
   wishlist    Wishlist[]
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
+  directSales DirectSale[]
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
 }
 
 model DeliveryZone {
@@ -180,4 +181,17 @@ model Coupon {
   isActive        Boolean  @default(true)
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
+}
+
+model DirectSale {
+  id         String   @id @default(uuid())
+  date       DateTime @default(now())
+  productId  String
+  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  quantity   Int
+  price      Float
+  receivedBy String
+  comment    String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 }

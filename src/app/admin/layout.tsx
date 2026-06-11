@@ -10,7 +10,8 @@ import {
   Package, 
   LineChart,
   UserCheck,
-  Users
+  Users,
+  Receipt
 } from "lucide-react";
 
 export default async function AdminLayout({
@@ -32,6 +33,7 @@ export default async function AdminLayout({
     navLinks.push(
       { name: "Dashboard", href: "/admin", icon: LayoutDashboard },
       { name: "Orders", href: "/admin/orders", icon: ShoppingBag },
+      { name: "POS", href: "/admin/pos", icon: Receipt },
       { name: "Categories", href: "/admin/categories", icon: Layers },
       { name: "Products", href: "/admin/products", icon: Package },
       { name: "Finance", href: "/admin/finance", icon: LineChart },
@@ -43,6 +45,7 @@ export default async function AdminLayout({
     }
     if (permissions.includes("MANAGE_ORDERS")) {
       navLinks.push({ name: "Orders", href: "/admin/orders", icon: ShoppingBag });
+      navLinks.push({ name: "POS", href: "/admin/pos", icon: Receipt });
     }
     if (permissions.includes("MANAGE_CATEGORIES")) {
       navLinks.push({ name: "Categories", href: "/admin/categories", icon: Layers });
