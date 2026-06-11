@@ -350,7 +350,7 @@ export default function OrdersGridView({
                   <th className="px-6 py-4 font-bold border-r border-slate-200">Amount</th>
                   <th className="px-6 py-4 font-bold border-r border-slate-200">Verification</th>
                   <th className="px-6 py-4 font-bold border-r border-slate-200">Order Status</th>
-                  <th className="px-6 py-4 font-bold text-center">Actions</th>
+                  <th className="px-6 py-4 font-bold text-center min-w-[160px]">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200">
@@ -397,7 +397,7 @@ export default function OrdersGridView({
                       </span>
                     </td>
                     {/* Actions */}
-                    <td className="px-6 py-4 text-center">
+                    <td className="px-6 py-4 text-center whitespace-nowrap">
                       <button
                         onClick={() => openModal(order)}
                         className="inline-flex h-12 px-4 items-center justify-center border-2 border-slate-900 text-slate-900 hover:bg-slate-900 hover:text-white font-bold text-xs uppercase tracking-wider transition-all"

@@ -370,7 +370,7 @@ Back-office order grid, sales analytics, and order mutations.
     - **Cloudinary Image Upload Integration**: Force the Category creation/edit forms to use the reusable `ImageUpload` component. Database mutations (`createCategory` and `updateCategory`) must strictly expect and store a `String` representing the Cloudinary secure URL for the `image` field (no local files or Base64).
   - **VERIFY**: `Completed. Added text field to Category model in Prisma schema, synchronized with Neon DB using prisma db push, and updated the seed script. Created secure, validated CRUD Server Actions in admin-categories.ts protected by verifySessionAndPermissions. Built Categories Page route page.tsx with strict role-level guards and CategoryManagementClient.tsx client view with a debounced search filter, add/edit/delete modals, and slug auto-generation. Fully compliant with Purple Ban and touch target sizes. Passed ESLint typechecks and master checklist validation.`
 
-- [ ] **TSK-019: Product Inventory Management**
+- [x] **TSK-019: Product Inventory Management**
   - **Agent**: `backend-specialist`
   - **Skills**: `nodejs-best-practices`, `frontend-design`
   - **Priority**: `P2`
@@ -380,7 +380,7 @@ Back-office order grid, sales analytics, and order mutations.
     - Build a Product inventory management dashboard at `/admin/products` listing all educational toys.
     - Implement CRUD Server Actions to manage `Product` records, editing fields: `title`, `description`, `price`, `categoryId`, `ageGroup`, `stock`, `benefits` (bullet points), and `featured` status. Enforce the `MANAGE_PRODUCTS` permission on both the page rendering and the Server Actions.
     - **Cloudinary Image Upload Integration**: Integrate the `ImageUpload` component into the Product form to support uploading multiple images. Construct a list of secure Cloudinary URL strings and store them in the database `images` field as a JSONB array.
-  - **VERIFY**: `Create a new product, upload multiple images, check JSONB array storage in database, and verify price/stock updates reflect dynamically in the catalog grid. Verify that Sub-Admins without MANAGE_PRODUCTS are blocked from accessing the page and executing actions. Verify that the product images array contains valid Cloudinary URLs.`
+  - **VERIFY**: `Completed. Built a custom, reusable MultiImageUpload.tsx component to support uploading up to 5 Cloudinary image assets with hover delete actions. Created secure, validated CRUD Server Actions in admin-products.ts protected by verifySessionAndPermissions. Configured page.tsx route with page-level role guards and developed ProductManagementClient.tsx client view with KPI metrics cards (total, out of stock, low stock), debounced text search, add/edit/delete modals, and slug auto-generation. Complies with Purple Ban and touch targets >= 48px. Passed ESLint checks and all 6 master validation checks.`
 
 - [ ] **TSK-020: Omnichannel Order Creation**
   - **Agent**: `backend-specialist`

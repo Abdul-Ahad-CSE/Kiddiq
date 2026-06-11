@@ -207,7 +207,7 @@ export default function StaffManagementClient({
       )}
 
       {/* Access List Grid (Desktop Table) */}
-      <div className="hidden md:block bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+      <div className="hidden md:block bg-white rounded-2xl border border-slate-100 shadow-sm overflow-x-auto">
         <table className="w-full text-left border-collapse">
           <thead>
             <tr className="bg-slate-50/75 border-b border-slate-100 text-slate-500 text-xs font-semibold uppercase tracking-wider font-sans">
@@ -215,7 +215,7 @@ export default function StaffManagementClient({
               <th className="px-6 py-4">Role</th>
               <th className="px-6 py-4">Permissions</th>
               <th className="px-6 py-4">Status</th>
-              <th className="px-6 py-4 text-right">Actions</th>
+              <th className="px-6 py-4 text-right min-w-[220px]">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100 text-slate-700 text-sm font-sans">
@@ -282,7 +282,7 @@ export default function StaffManagementClient({
                     )}
                   </button>
                 </td>
-                <td className="px-6 py-4 text-right">
+                <td className="px-6 py-4 text-right whitespace-nowrap">
                   <div className="flex items-center justify-end gap-2">
                     {member.role !== "SUPER_ADMIN" && (
                       <button

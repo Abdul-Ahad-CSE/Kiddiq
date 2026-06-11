@@ -253,14 +253,14 @@ export default function CategoryManagementClient({
 
       {/* Desktop view (Table layout) */}
       {filteredCategories.length > 0 && (
-        <div className="hidden md:block bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden mb-6">
+        <div className="hidden md:block bg-white rounded-2xl border border-slate-100 shadow-sm overflow-x-auto mb-6">
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-slate-50/75 border-b border-slate-100 text-slate-500 text-xs font-semibold uppercase tracking-wider font-sans">
                 <th className="px-6 py-4 w-24">Image</th>
                 <th className="px-6 py-4 w-52">Name & Slug</th>
                 <th className="px-6 py-4">Description</th>
-                <th className="px-6 py-4 text-right w-36">Actions</th>
+                <th className="px-6 py-4 text-right min-w-[140px]">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 text-slate-700 text-sm font-sans">
@@ -292,7 +292,7 @@ export default function CategoryManagementClient({
                       {cat.text || <span className="text-slate-350 italic">No description provided</span>}
                     </p>
                   </td>
-                  <td className="px-6 py-4 text-right">
+                  <td className="px-6 py-4 text-right whitespace-nowrap">
                     <div className="flex items-center justify-end gap-1.5">
                       <button
                         onClick={() => handleOpenEdit(cat)}
