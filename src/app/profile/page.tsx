@@ -5,6 +5,8 @@ import { redirect } from "next/navigation";
 import prisma from "@/lib/db";
 import { Role } from "@/generated/prisma/client";
 import ProfileClient from "./ProfileClient";
+import { getCustomerOrders } from "@/app/actions/order-track";
+import { Order } from "@/components/OrderListCard";
 
 export const dynamic = "force-dynamic";
 
@@ -60,5 +62,22 @@ export default async function ProfilePage() {
 
   const chattogramAreas = areas.map((a) => a.name);
 
-  return <ProfileClient user={user} chattogramAreas={chattogramAreas} />;
+  const ordersRes = await getCustomerOrders();
+  const initialOrders: Order[] = ordersRes.success && ordersRes.orders
+    ? ordersRes.orders.map((o) => ({
+        id: o.id,
+        createdAt: o.createdAt,
+        amountPaid: o.amountPaid,
+        orderStatus: o.orderStatus,
+        items: typeof o.items === "string" ? o.items : JSON.stringify(o.items),
+      }))
+    : [];
+
+  return (
+    <ProfileClient
+      user={user}
+      chattogramAreas={chattogramAreas}
+      initialOrders={initialOrders}
+    />
+  );
 }

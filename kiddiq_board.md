@@ -490,7 +490,7 @@ Customer registration, shipping profile synchronization, self-service dashboard,
     - Log token resetLink to console as placeholder.
   - **VERIFY**: `Submit forgot-password form, copy generated token from server console logs, navigate to reset URL, input new password, and verify you can login using the updated password.`
 
-- [ ] **TSK-025: Universal "Track Order" & Profile History**
+- [x] **TSK-025: Universal "Track Order" & Profile History**
   - **Agent**: `fullstack-specialist`
   - **Skills**: `clean-code`, `frontend-design`, `database-design`
   - **Priority**: `P1`

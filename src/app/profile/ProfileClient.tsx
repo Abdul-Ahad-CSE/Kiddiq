@@ -3,9 +3,11 @@
 import React, { useState, useTransition, useEffect } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import { AlertCircle, CheckCircle2 } from "lucide-react";
+import * as z from "zod";
+import { AlertCircle, CheckCircle2, ShoppingCart } from "lucide-react";
+import Link from "next/link";
 import { updateProfileDetails, updateUserPassword } from "@/app/actions/customer-profile";
+import OrderListCard, { Order } from "@/components/OrderListCard";
 
 const BANGLADESH_DISTRICTS = [
   "Chattogram",
@@ -106,9 +108,11 @@ interface ProfileClientProps {
     fullAddress: string | null;
   };
   chattogramAreas: string[];
+  initialOrders: Order[];
 }
 
-export default function ProfileClient({ user, chattogramAreas }: ProfileClientProps) {
+export default function ProfileClient({ user, chattogramAreas, initialOrders }: ProfileClientProps) {
+  const [activeTab, setActiveTab] = useState<"address" | "security" | "orders">("address");
   const [isPendingDetails, startDetailsTransition] = useTransition();
   const [isPendingPassword, startPasswordTransition] = useTransition();
 
@@ -209,294 +213,368 @@ export default function ProfileClient({ user, chattogramAreas }: ProfileClientPr
         <h1 className="text-3xl font-black uppercase tracking-tight text-slate-900 font-sans">
           My Account
         </h1>
-        <p className="mt-1 text-sm text-slate-500">
-          Manage your personal shipping information and account security passwords.
+        <p className="mt-1 text-sm text-slate-500 font-sans">
+          Manage your personal shipping information, passwords, and order history.
         </p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-        {/* Left Column: Details Form (takes 7 columns on desktop) */}
-        <div className="lg:col-span-7 bg-white border border-slate-200 rounded-none p-6 shadow-[4px_4px_0px_0px_rgba(15,23,42,1)] space-y-6">
-          <div>
-            <h2 className="text-lg font-extrabold uppercase tracking-tight text-slate-900 font-sans">
-              Profile Details
-            </h2>
-            <p className="text-xs text-slate-400">
-              Keep your default shipping address updated for quick future checkouts.
-            </p>
-          </div>
+      {/* Tab Selector */}
+      <div className="flex border-b border-slate-200 mb-8 overflow-x-auto scrollbar-none gap-2">
+        <button
+          onClick={() => setActiveTab("address")}
+          className={`h-12 px-6 text-sm font-extrabold uppercase tracking-wider transition-all border-b-2 rounded-none flex items-center justify-center shrink-0 font-sans cursor-pointer ${
+            activeTab === "address"
+              ? "border-slate-900 text-slate-900 bg-white"
+              : "border-transparent text-slate-500 hover:text-slate-800 hover:border-slate-300"
+          }`}
+        >
+          Default Address
+        </button>
+        <button
+          onClick={() => setActiveTab("security")}
+          className={`h-12 px-6 text-sm font-extrabold uppercase tracking-wider transition-all border-b-2 rounded-none flex items-center justify-center shrink-0 font-sans cursor-pointer ${
+            activeTab === "security"
+              ? "border-slate-900 text-slate-900 bg-white"
+              : "border-transparent text-slate-500 hover:text-slate-800 hover:border-slate-300"
+          }`}
+        >
+          Security & Password
+        </button>
+        <button
+          onClick={() => setActiveTab("orders")}
+          className={`h-12 px-6 text-sm font-extrabold uppercase tracking-wider transition-all border-b-2 rounded-none flex items-center justify-center shrink-0 font-sans cursor-pointer ${
+            activeTab === "orders"
+              ? "border-slate-900 text-slate-900 bg-white"
+              : "border-transparent text-slate-500 hover:text-slate-800 hover:border-slate-300"
+          }`}
+        >
+          Order History ({initialOrders.length})
+        </button>
+      </div>
 
-          <form onSubmit={handleSubmitDetails(onSubmitDetails)} className="space-y-4">
-            {detailsSuccess && (
-              <div className="flex gap-2 items-center p-3 bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-semibold rounded-none">
-                <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600" />
-                <span>{detailsSuccess}</span>
-              </div>
-            )}
-
-            {detailsError && (
-              <div className="flex gap-2 items-center p-3 bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold rounded-none">
-                <AlertCircle className="h-4 w-4 shrink-0 text-rose-600" />
-                <span>{detailsError}</span>
-              </div>
-            )}
-
-            {/* Email (Read-only) */}
+      {/* Tab Panels */}
+      <div>
+        {activeTab === "address" && (
+          <div className="bg-white border border-slate-200 rounded-none p-6 shadow-[4px_4px_0px_0px_rgba(15,23,42,1)] space-y-6 max-w-2xl">
             <div>
-              <label className="text-xs font-bold uppercase tracking-wider text-slate-600 block mb-1">
-                Email Address (Read-only)
-              </label>
-              <input
-                type="email"
-                value={user.email}
-                disabled
-                className="w-full h-12 border border-slate-200 bg-slate-100 px-4 text-sm text-slate-500 rounded-none cursor-not-allowed outline-hidden"
-              />
+              <h2 className="text-lg font-extrabold uppercase tracking-tight text-slate-900 font-sans">
+                Profile Details
+              </h2>
+              <p className="text-xs text-slate-400 font-sans">
+                Keep your default shipping address updated for quick future checkouts.
+              </p>
             </div>
 
-            {/* Name */}
-            <div>
-              <label htmlFor="name" className="text-xs font-bold uppercase tracking-wider text-slate-600 block mb-1">
-                Full Name
-              </label>
-              <input
-                id="name"
-                type="text"
-                placeholder="Enter your name"
-                {...registerDetails("name")}
-                className={`w-full h-12 border px-4 text-sm bg-slate-50 focus:bg-white outline-hidden text-slate-800 rounded-none transition-all ${
-                  errorsDetails.name ? "border-rose-500" : "border-slate-200 focus:border-slate-900"
-                }`}
-              />
-              {errorsDetails.name && (
-                <p className="mt-1 text-xs font-semibold text-rose-600">{errorsDetails.name.message}</p>
-              )}
-            </div>
-
-            {/* Phone */}
-            <div>
-              <label htmlFor="phone" className="text-xs font-bold uppercase tracking-wider text-slate-600 block mb-1">
-                Phone Number
-              </label>
-              <input
-                id="phone"
-                type="tel"
-                placeholder="e.g., 01825462039"
-                {...registerDetails("phone")}
-                className={`w-full h-12 border px-4 text-sm bg-slate-50 focus:bg-white outline-hidden text-slate-800 rounded-none transition-all ${
-                  errorsDetails.phone ? "border-rose-500" : "border-slate-200 focus:border-slate-900"
-                }`}
-              />
-              {errorsDetails.phone && (
-                <p className="mt-1 text-xs font-semibold text-rose-600">{errorsDetails.phone.message}</p>
-              )}
-            </div>
-
-            {/* District */}
-            <div>
-              <label htmlFor="district" className="text-xs font-bold uppercase tracking-wider text-slate-600 block mb-1">
-                District
-              </label>
-              <select
-                id="district"
-                {...registerDetails("district", {
-                  onChange: () => {
-                    setValueDetails("area", "");
-                    setIsOtherArea(false);
-                  }
-                })}
-                className={`w-full h-12 border px-3 text-sm bg-slate-50 focus:bg-white outline-hidden text-slate-800 rounded-none cursor-pointer transition-all ${
-                  errorsDetails.district ? "border-rose-500" : "border-slate-200 focus:border-slate-900"
-                }`}
-              >
-                <option value="">Select District...</option>
-                {BANGLADESH_DISTRICTS.map((dist) => (
-                  <option key={dist} value={dist}>
-                    {dist}
-                  </option>
-                ))}
-              </select>
-              {errorsDetails.district && (
-                <p className="mt-1 text-xs font-semibold text-rose-600">{errorsDetails.district.message}</p>
-              )}
-            </div>
-
-            {/* Area */}
-            <div>
-              <label htmlFor="area" className="text-xs font-bold uppercase tracking-wider text-slate-600 block mb-1">
-                Area / Thana / Upazila
-              </label>
-              {watchedDistrict === "Chattogram" ? (
-                <div className="space-y-3">
-                  <select
-                    id="area-select"
-                    onChange={handleAreaSelectChange}
-                    value={isOtherArea ? "Other" : watchedArea || ""}
-                    className={`w-full h-12 border px-3 text-sm bg-slate-50 focus:bg-white outline-hidden text-slate-800 rounded-none cursor-pointer transition-all ${
-                      errorsDetails.area ? "border-rose-500" : "border-slate-200 focus:border-slate-900"
-                    }`}
-                  >
-                    <option value="">Select Area...</option>
-                    {chattogramAreas.map((area) => (
-                      <option key={area} value={area}>
-                        {area}
-                      </option>
-                    ))}
-                    <option value="Other">Other (Outside Chattogram City / Upazila)</option>
-                  </select>
-
-                  {isOtherArea && (
-                    <input
-                      type="text"
-                      placeholder="Enter Thana / Upazila name"
-                      value={watchedArea}
-                      onChange={(e) => setValueDetails("area", e.target.value, { shouldValidate: true })}
-                      className={`w-full h-12 border px-4 text-sm bg-slate-50 focus:bg-white outline-hidden text-slate-800 rounded-none transition-all ${
-                        errorsDetails.area ? "border-rose-500" : "border-slate-200 focus:border-slate-900"
-                      }`}
-                    />
-                  )}
+            <form onSubmit={handleSubmitDetails(onSubmitDetails)} className="space-y-4">
+              {detailsSuccess && (
+                <div className="flex gap-2 items-center p-3 bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-semibold rounded-none">
+                  <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600" />
+                  <span>{detailsSuccess}</span>
                 </div>
-              ) : (
+              )}
+
+              {detailsError && (
+                <div className="flex gap-2 items-center p-3 bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold rounded-none">
+                  <AlertCircle className="h-4 w-4 shrink-0 text-rose-600" />
+                  <span>{detailsError}</span>
+                </div>
+              )}
+
+              {/* Email (Read-only) */}
+              <div>
+                <label className="text-xs font-bold uppercase tracking-wider text-slate-600 block mb-1 font-sans">
+                  Email Address (Read-only)
+                </label>
                 <input
-                  id="area"
+                  type="email"
+                  value={user.email}
+                  disabled
+                  className="w-full h-12 border border-slate-200 bg-slate-100 px-4 text-sm text-slate-500 rounded-none cursor-not-allowed outline-hidden font-sans"
+                />
+              </div>
+
+              {/* Name */}
+              <div>
+                <label htmlFor="name" className="text-xs font-bold uppercase tracking-wider text-slate-600 block mb-1 font-sans">
+                  Full Name
+                </label>
+                <input
+                  id="name"
                   type="text"
-                  placeholder={watchedDistrict ? "Enter Thana / Upazila" : "Select district first"}
-                  disabled={!watchedDistrict}
-                  {...registerDetails("area")}
-                  className={`w-full h-12 border px-4 text-sm bg-slate-50 focus:bg-white outline-hidden text-slate-800 rounded-none transition-all ${
-                    errorsDetails.area ? "border-rose-500" : "border-slate-200 focus:border-slate-900"
+                  placeholder="Enter your name"
+                  {...registerDetails("name")}
+                  className={`w-full h-12 border px-4 text-sm bg-slate-50 focus:bg-white outline-hidden text-slate-800 rounded-none transition-all font-sans ${
+                    errorsDetails.name ? "border-rose-500" : "border-slate-200 focus:border-slate-900"
                   }`}
                 />
-              )}
-              {errorsDetails.area && (
-                <p className="mt-1 text-xs font-semibold text-rose-600">{errorsDetails.area.message}</p>
-              )}
-            </div>
+                {errorsDetails.name && (
+                  <p className="mt-1 text-xs font-semibold text-rose-600 font-sans">{errorsDetails.name.message}</p>
+                )}
+              </div>
 
-            {/* Address */}
-            <div>
-              <label htmlFor="fullAddress" className="text-xs font-bold uppercase tracking-wider text-slate-600 block mb-1">
-                Full Address
-              </label>
-              <textarea
-                id="fullAddress"
-                rows={3}
-                placeholder="Street address, house, road details..."
-                {...registerDetails("fullAddress")}
-                className={`w-full border p-4 text-sm bg-slate-50 focus:bg-white outline-hidden text-slate-800 rounded-none resize-none transition-all ${
-                  errorsDetails.fullAddress ? "border-rose-500" : "border-slate-200 focus:border-slate-900"
-                }`}
-              />
-              {errorsDetails.fullAddress && (
-                <p className="mt-1 text-xs font-semibold text-rose-600">{errorsDetails.fullAddress.message}</p>
-              )}
-            </div>
+              {/* Phone */}
+              <div>
+                <label htmlFor="phone" className="text-xs font-bold uppercase tracking-wider text-slate-600 block mb-1 font-sans">
+                  Phone Number
+                </label>
+                <input
+                  id="phone"
+                  type="tel"
+                  placeholder="e.g., 01825462039"
+                  {...registerDetails("phone")}
+                  className={`w-full h-12 border px-4 text-sm bg-slate-50 focus:bg-white outline-hidden text-slate-800 rounded-none transition-all font-sans ${
+                    errorsDetails.phone ? "border-rose-500" : "border-slate-200 focus:border-slate-900"
+                  }`}
+                />
+                {errorsDetails.phone && (
+                  <p className="mt-1 text-xs font-semibold text-rose-600 font-sans">{errorsDetails.phone.message}</p>
+                )}
+              </div>
 
-            {/* Details Submit button */}
-            <button
-              type="submit"
-              disabled={isPendingDetails}
-              className="w-full h-12 bg-slate-900 hover:bg-slate-800 text-white font-extrabold uppercase tracking-widest text-xs rounded-none transition-colors duration-200 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isPendingDetails ? "Saving Details..." : "Save Details"}
-            </button>
-          </form>
-        </div>
+              {/* District */}
+              <div>
+                <label htmlFor="district" className="text-xs font-bold uppercase tracking-wider text-slate-600 block mb-1 font-sans">
+                  District
+                </label>
+                <select
+                  id="district"
+                  {...registerDetails("district", {
+                    onChange: () => {
+                      setValueDetails("area", "");
+                      setIsOtherArea(false);
+                    }
+                  })}
+                  className={`w-full h-12 border px-3 text-sm bg-slate-50 focus:bg-white outline-hidden text-slate-800 rounded-none cursor-pointer transition-all font-sans ${
+                    errorsDetails.district ? "border-rose-500" : "border-slate-200 focus:border-slate-900"
+                  }`}
+                >
+                  <option value="">Select District...</option>
+                  {BANGLADESH_DISTRICTS.map((dist) => (
+                    <option key={dist} value={dist}>
+                      {dist}
+                    </option>
+                  ))}
+                </select>
+                {errorsDetails.district && (
+                  <p className="mt-1 text-xs font-semibold text-rose-600 font-sans">{errorsDetails.district.message}</p>
+                )}
+              </div>
 
-        {/* Right Column: Security Password Form (takes 5 columns on desktop) */}
-        <div className="lg:col-span-5 bg-white border border-slate-200 rounded-none p-6 shadow-[4px_4px_0px_0px_rgba(15,23,42,1)] space-y-6">
-          <div>
-            <h2 className="text-lg font-extrabold uppercase tracking-tight text-slate-900 font-sans">
-              Security
-            </h2>
-            <p className="text-xs text-slate-400">
-              Update your password configuration regularly to protect your account.
-            </p>
+              {/* Area */}
+              <div>
+                <label htmlFor="area" className="text-xs font-bold uppercase tracking-wider text-slate-600 block mb-1 font-sans">
+                  Area / Thana / Upazila
+                </label>
+                {watchedDistrict === "Chattogram" ? (
+                  <div className="space-y-3 font-sans">
+                    <select
+                      id="area-select"
+                      onChange={handleAreaSelectChange}
+                      value={isOtherArea ? "Other" : watchedArea || ""}
+                      className={`w-full h-12 border px-3 text-sm bg-slate-50 focus:bg-white outline-hidden text-slate-800 rounded-none cursor-pointer transition-all ${
+                        errorsDetails.area ? "border-rose-500" : "border-slate-200 focus:border-slate-900"
+                      }`}
+                    >
+                      <option value="">Select Area...</option>
+                      {chattogramAreas.map((area) => (
+                        <option key={area} value={area}>
+                          {area}
+                        </option>
+                      ))}
+                      <option value="Other">Other (Outside Chattogram City / Upazila)</option>
+                    </select>
+
+                    {isOtherArea && (
+                      <input
+                        type="text"
+                        placeholder="Enter Thana / Upazila name"
+                        value={watchedArea}
+                        onChange={(e) => setValueDetails("area", e.target.value, { shouldValidate: true })}
+                        className={`w-full h-12 border px-4 text-sm bg-slate-50 focus:bg-white outline-hidden text-slate-800 rounded-none transition-all ${
+                          errorsDetails.area ? "border-rose-500" : "border-slate-200 focus:border-slate-900"
+                        }`}
+                      />
+                    )}
+                  </div>
+                ) : (
+                  <input
+                    id="area"
+                    type="text"
+                    placeholder={watchedDistrict ? "Enter Thana / Upazila" : "Select district first"}
+                    disabled={!watchedDistrict}
+                    {...registerDetails("area")}
+                    className={`w-full h-12 border px-4 text-sm bg-slate-50 focus:bg-white outline-hidden text-slate-800 rounded-none transition-all font-sans ${
+                      errorsDetails.area ? "border-rose-500" : "border-slate-200 focus:border-slate-900"
+                    }`}
+                  />
+                )}
+                {errorsDetails.area && (
+                  <p className="mt-1 text-xs font-semibold text-rose-600 font-sans">{errorsDetails.area.message}</p>
+                )}
+              </div>
+
+              {/* Address */}
+              <div>
+                <label htmlFor="fullAddress" className="text-xs font-bold uppercase tracking-wider text-slate-600 block mb-1 font-sans">
+                  Full Address
+                </label>
+                <textarea
+                  id="fullAddress"
+                  rows={3}
+                  placeholder="Street address, house, road details..."
+                  {...registerDetails("fullAddress")}
+                  className={`w-full border p-4 text-sm bg-slate-50 focus:bg-white outline-hidden text-slate-800 rounded-none resize-none transition-all font-sans ${
+                    errorsDetails.fullAddress ? "border-rose-500" : "border-slate-200 focus:border-slate-900"
+                  }`}
+                />
+                {errorsDetails.fullAddress && (
+                  <p className="mt-1 text-xs font-semibold text-rose-600 font-sans">{errorsDetails.fullAddress.message}</p>
+                )}
+              </div>
+
+              {/* Details Submit button */}
+              <button
+                type="submit"
+                disabled={isPendingDetails}
+                className="w-full h-12 bg-slate-900 hover:bg-slate-800 text-white font-extrabold uppercase tracking-widest text-xs rounded-none transition-colors duration-200 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed font-sans"
+              >
+                {isPendingDetails ? "Saving Details..." : "Save Details"}
+              </button>
+            </form>
           </div>
+        )}
 
-          <form onSubmit={handleSubmitPassword(onSubmitPassword)} className="space-y-4">
-            {passwordSuccess && (
-              <div className="flex gap-2 items-center p-3 bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-semibold rounded-none">
-                <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600" />
-                <span>{passwordSuccess}</span>
+        {activeTab === "security" && (
+          <div className="bg-white border border-slate-200 rounded-none p-6 shadow-[4px_4px_0px_0px_rgba(15,23,42,1)] space-y-6 max-w-xl">
+            <div>
+              <h2 className="text-lg font-extrabold uppercase tracking-tight text-slate-900 font-sans">
+                Security
+              </h2>
+              <p className="text-xs text-slate-400 font-sans">
+                Update your password configuration regularly to protect your account.
+              </p>
+            </div>
+
+            <form onSubmit={handleSubmitPassword(onSubmitPassword)} className="space-y-4">
+              {passwordSuccess && (
+                <div className="flex gap-2 items-center p-3 bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-semibold rounded-none">
+                  <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600" />
+                  <span>{passwordSuccess}</span>
+                </div>
+              )}
+
+              {passwordError && (
+                <div className="flex gap-2 items-center p-3 bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold rounded-none">
+                  <AlertCircle className="h-4 w-4 shrink-0 text-rose-600" />
+                  <span>{passwordError}</span>
+                </div>
+              )}
+
+              {/* Current Password */}
+              <div>
+                <label htmlFor="currentPassword" className="text-xs font-bold uppercase tracking-wider text-slate-600 block mb-1 font-sans">
+                  Current Password
+                </label>
+                <input
+                  id="currentPassword"
+                  type="password"
+                  placeholder="••••••••"
+                  {...registerPassword("currentPassword")}
+                  className={`w-full h-12 border px-4 text-sm bg-slate-50 focus:bg-white outline-hidden text-slate-800 rounded-none transition-all font-sans ${
+                    errorsPassword.currentPassword ? "border-rose-500" : "border-slate-200 focus:border-slate-900"
+                  }`}
+                />
+                {errorsPassword.currentPassword && (
+                  <p className="mt-1 text-xs font-semibold text-rose-600 font-sans">{errorsPassword.currentPassword.message}</p>
+                )}
+              </div>
+
+              {/* New Password */}
+              <div>
+                <label htmlFor="newPassword" className="text-xs font-bold uppercase tracking-wider text-slate-600 block mb-1 font-sans">
+                  New Password
+                </label>
+                <input
+                  id="newPassword"
+                  type="password"
+                  placeholder="••••••••"
+                  {...registerPassword("newPassword")}
+                  className={`w-full h-12 border px-4 text-sm bg-slate-50 focus:bg-white outline-hidden text-slate-800 rounded-none transition-all font-sans ${
+                    errorsPassword.newPassword ? "border-rose-500" : "border-slate-200 focus:border-slate-900"
+                  }`}
+                />
+                {errorsPassword.newPassword && (
+                  <p className="mt-1 text-xs font-semibold text-rose-600 font-sans">{errorsPassword.newPassword.message}</p>
+                )}
+              </div>
+
+              {/* Confirm New Password */}
+              <div>
+                <label htmlFor="confirmNewPassword" className="text-xs font-bold uppercase tracking-wider text-slate-600 block mb-1 font-sans">
+                  Confirm New Password
+                </label>
+                <input
+                  id="confirmNewPassword"
+                  type="password"
+                  placeholder="••••••••"
+                  {...registerPassword("confirmNewPassword")}
+                  className={`w-full h-12 border px-4 text-sm bg-slate-50 focus:bg-white outline-hidden text-slate-800 rounded-none transition-all font-sans ${
+                    errorsPassword.confirmNewPassword ? "border-rose-500" : "border-slate-200 focus:border-slate-900"
+                  }`}
+                />
+                {errorsPassword.confirmNewPassword && (
+                  <p className="mt-1 text-xs font-semibold text-rose-600 font-sans">{errorsPassword.confirmNewPassword.message}</p>
+                )}
+              </div>
+
+              {/* Password Submit button */}
+              <button
+                type="submit"
+                disabled={isPendingPassword}
+                className="w-full h-12 bg-slate-900 hover:bg-slate-800 text-white font-extrabold uppercase tracking-widest text-xs rounded-none transition-colors duration-200 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed font-sans"
+              >
+                {isPendingPassword ? "Updating Password..." : "Update Password"}
+              </button>
+            </form>
+          </div>
+        )}
+
+        {activeTab === "orders" && (
+          <div className="space-y-6">
+            <div>
+              <h2 className="text-lg font-extrabold uppercase tracking-tight text-slate-900 font-sans">
+                Order History
+              </h2>
+              <p className="text-xs text-slate-400 font-sans">
+                Track status and view history of all orders placed with your account.
+              </p>
+            </div>
+
+            {initialOrders.length === 0 ? (
+              <div className="text-center py-16 bg-white border border-slate-200 rounded-none shadow-[4px_4px_0px_0px_rgba(15,23,42,1)] px-4 max-w-2xl">
+                <ShoppingCart className="mx-auto h-12 w-12 text-slate-400 mb-4" />
+                <h3 className="text-lg font-extrabold text-slate-900 font-sans uppercase mb-2">
+                  You haven&apos;t placed any orders yet
+                </h3>
+                <p className="text-sm text-slate-500 font-sans mb-6 max-w-sm mx-auto">
+                  Explore our collections and discover premium educational toys, supplies, and resources for your child.
+                </p>
+                <Link
+                  href="/shop"
+                  className="inline-flex items-center justify-center h-12 px-6 bg-slate-900 hover:bg-slate-800 text-white font-extrabold uppercase tracking-widest text-xs rounded-none transition-colors duration-200 font-sans"
+                >
+                  Browse Shop
+                </Link>
+              </div>
+            ) : (
+              <div className="space-y-4 max-w-4xl">
+                {initialOrders.map((order) => (
+                  <OrderListCard key={order.id} order={order} />
+                ))}
               </div>
             )}
-
-            {passwordError && (
-              <div className="flex gap-2 items-center p-3 bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold rounded-none">
-                <AlertCircle className="h-4 w-4 shrink-0 text-rose-600" />
-                <span>{passwordError}</span>
-              </div>
-            )}
-
-            {/* Current Password */}
-            <div>
-              <label htmlFor="currentPassword" className="text-xs font-bold uppercase tracking-wider text-slate-600 block mb-1">
-                Current Password
-              </label>
-              <input
-                id="currentPassword"
-                type="password"
-                placeholder="••••••••"
-                {...registerPassword("currentPassword")}
-                className={`w-full h-12 border px-4 text-sm bg-slate-50 focus:bg-white outline-hidden text-slate-800 rounded-none transition-all ${
-                  errorsPassword.currentPassword ? "border-rose-500" : "border-slate-200 focus:border-slate-900"
-                }`}
-              />
-              {errorsPassword.currentPassword && (
-                <p className="mt-1 text-xs font-semibold text-rose-600">{errorsPassword.currentPassword.message}</p>
-              )}
-            </div>
-
-            {/* New Password */}
-            <div>
-              <label htmlFor="newPassword" className="text-xs font-bold uppercase tracking-wider text-slate-600 block mb-1">
-                New Password
-              </label>
-              <input
-                id="newPassword"
-                type="password"
-                placeholder="••••••••"
-                {...registerPassword("newPassword")}
-                className={`w-full h-12 border px-4 text-sm bg-slate-50 focus:bg-white outline-hidden text-slate-800 rounded-none transition-all ${
-                  errorsPassword.newPassword ? "border-rose-500" : "border-slate-200 focus:border-slate-900"
-                }`}
-              />
-              {errorsPassword.newPassword && (
-                <p className="mt-1 text-xs font-semibold text-rose-600">{errorsPassword.newPassword.message}</p>
-              )}
-            </div>
-
-            {/* Confirm New Password */}
-            <div>
-              <label htmlFor="confirmNewPassword" className="text-xs font-bold uppercase tracking-wider text-slate-600 block mb-1">
-                Confirm New Password
-              </label>
-              <input
-                id="confirmNewPassword"
-                type="password"
-                placeholder="••••••••"
-                {...registerPassword("confirmNewPassword")}
-                className={`w-full h-12 border px-4 text-sm bg-slate-50 focus:bg-white outline-hidden text-slate-800 rounded-none transition-all ${
-                  errorsPassword.confirmNewPassword ? "border-rose-500" : "border-slate-200 focus:border-slate-900"
-                }`}
-              />
-              {errorsPassword.confirmNewPassword && (
-                <p className="mt-1 text-xs font-semibold text-rose-600">{errorsPassword.confirmNewPassword.message}</p>
-              )}
-            </div>
-
-            {/* Password Submit button */}
-            <button
-              type="submit"
-              disabled={isPendingPassword}
-              className="w-full h-12 bg-slate-900 hover:bg-slate-800 text-white font-extrabold uppercase tracking-widest text-xs rounded-none transition-colors duration-200 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isPendingPassword ? "Updating Password..." : "Update Password"}
-            </button>
-          </form>
-        </div>
+          </div>
+        )}
       </div>
     </div>
   );

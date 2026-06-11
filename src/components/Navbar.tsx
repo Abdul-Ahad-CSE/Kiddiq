@@ -104,6 +104,17 @@ export default function Navbar({ session }: NavbarProps) {
               Shop
             </Link>
 
+            <Link 
+              href="/track-order" 
+              className={`text-sm font-medium transition-colors hover:text-brand-blue ${
+                pathname === "/track-order" 
+                  ? "text-brand-blue font-semibold" 
+                  : "text-slate-600"
+              }`}
+            >
+              Track Order
+            </Link>
+
             {/* Categories Dropdown Trigger */}
             <div className="relative" ref={dropdownRef}>
               <button
@@ -258,6 +269,16 @@ export default function Navbar({ session }: NavbarProps) {
               }`}
             >
               Shop
+            </Link>
+            <Link 
+              href="/track-order" 
+              className={`text-base font-semibold transition-colors hover:text-brand-blue ${
+                pathname === "/track-order" 
+                  ? "text-brand-blue" 
+                  : "text-slate-700"
+              }`}
+            >
+              Track Order
             </Link>
 
             {/* Flat Category Links in Mobile */}
