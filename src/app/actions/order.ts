@@ -110,8 +110,22 @@ export async function createOrder(
         }
       }
 
-      // Calculate discount (10% off for KIDDIQ10 promo code)
-      const serverDiscount = promoCode === "KIDDIQ10" ? Math.round(calculatedSubtotal * 0.1) : 0;
+      // Calculate discount using database coupon lookup
+      let serverDiscount = 0;
+      let appliedCouponCode: string | null = null;
+
+      if (promoCode) {
+        const normalizedPromoCode = promoCode.trim().toUpperCase();
+        const coupon = await tx.coupon.findUnique({
+          where: { code: normalizedPromoCode },
+        });
+
+        if (coupon && coupon.isActive && calculatedSubtotal >= coupon.minOrderAmount) {
+          serverDiscount = Math.round(calculatedSubtotal * (coupon.discountPercent / 100));
+          appliedCouponCode = coupon.code;
+        }
+      }
+
       const serverGrandTotal = Math.max(0, calculatedSubtotal - serverDiscount + calculatedDeliveryCharge);
 
       // Hybrid split payment calculations
@@ -144,6 +158,8 @@ export async function createOrder(
           items: serializedItems as Prisma.InputJsonValue,
           subtotal: calculatedSubtotal,
           deliveryCharge: calculatedDeliveryCharge,
+          couponCode: appliedCouponCode,
+          discount: serverDiscount,
           paymentOption: paymentOption === "cod" ? "COD" : "FULL_ADVANCE",
           paymentMethod: paymentMethod === "bkash" ? "bKash" : "Nagad",
           amountPaid: serverPaidNow,

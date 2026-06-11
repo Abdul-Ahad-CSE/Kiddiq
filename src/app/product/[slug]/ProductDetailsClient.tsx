@@ -2,8 +2,9 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronLeft, ChevronRight, ShoppingBag, Heart, Phone, Check, Star } from "lucide-react";
+import { ChevronLeft, ChevronRight, ShoppingBag, Heart, Phone, Check, Star, CreditCard, CameraOff } from "lucide-react";
 import { useCartStore, useCartState } from "@/store/useCartStore";
 
 export interface ProductWithCategory {
@@ -30,15 +31,16 @@ interface ProductDetailsClientProps {
   product: ProductWithCategory;
 }
 
+const PLACEHOLDER_IMAGE = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="300" viewBox="0 0 300 300"><rect width="300" height="300" fill="%23f1f5f9"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="600" fill="%2394a3b8">No Image</text></svg>';
+
 export default function ProductDetailsClient({ product }: ProductDetailsClientProps) {
+  const router = useRouter();
   const addItem = useCartStore((state) => state.addItem);
-  const updateQuantity = useCartStore((state) => state.updateQuantity);
   const toggleWishlist = useCartStore((state) => state.toggleWishlist);
   const isWishlisted = useCartState((state) => state.isInWishlist(product.id), false);
 
   // States
   const [activeImgIndex, setActiveImgIndex] = useState(0);
-  const [quantity, setQuantity] = useState(1);
 
   // Parse images JSON safely
   let imageUrls: string[] = [];
@@ -54,9 +56,6 @@ export default function ProductDetailsClient({ product }: ProductDetailsClientPr
   } catch {
     // Fail silently
   }
-  if (imageUrls.length === 0) {
-    imageUrls = ["/logo.jpg"];
-  }
 
   // Parse benefits list
   const benefitsList = product.benefits
@@ -64,10 +63,12 @@ export default function ProductDetailsClient({ product }: ProductDetailsClientPr
     : [];
 
   const handleNextImage = () => {
+    if (imageUrls.length === 0) return;
     setActiveImgIndex((prev) => (prev + 1) % imageUrls.length);
   };
 
   const handlePrevImage = () => {
+    if (imageUrls.length === 0) return;
     setActiveImgIndex((prev) => (prev - 1 + imageUrls.length) % imageUrls.length);
   };
 
@@ -77,11 +78,21 @@ export default function ProductDetailsClient({ product }: ProductDetailsClientPr
       title: product.title,
       slug: product.slug,
       price: product.price,
-      image: imageUrls[0] || "/logo.jpg",
+      image: imageUrls[0] || PLACEHOLDER_IMAGE,
       stock: product.stock,
     });
-    // Set custom quantity in store
-    updateQuantity(product.id, quantity);
+  };
+
+  const handleBuyNow = () => {
+    addItem({
+      id: product.id,
+      title: product.title,
+      slug: product.slug,
+      price: product.price,
+      image: imageUrls[0] || PLACEHOLDER_IMAGE,
+      stock: product.stock,
+    });
+    router.push("/checkout");
   };
 
   const handleToggleWishlist = () => {
@@ -117,48 +128,56 @@ export default function ProductDetailsClient({ product }: ProductDetailsClientPr
       <div className="lg:col-span-6 xl:col-span-5 w-full flex flex-col">
         
         {/* Main image container */}
-        <div className="relative aspect-square w-full overflow-hidden rounded-2xl bg-slate-50 border border-slate-100 group select-none">
-          
-          <AnimatePresence mode="wait">
-            <motion.img
-              key={activeImgIndex}
-              src={imageUrls[activeImgIndex]}
-              alt={product.title}
-              className="h-full w-full object-cover cursor-grab active:cursor-grabbing"
-              initial={{ opacity: 0, scale: 0.96 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.96 }}
-              transition={{ duration: 0.2 }}
-              drag="x"
-              dragConstraints={{ left: 0, right: 0 }}
-              dragElastic={0.4}
-              onDragEnd={(e, info) => {
-                if (info.offset.x > 50) {
-                  handlePrevImage();
-                } else if (info.offset.x < -50) {
-                  handleNextImage();
-                }
-              }}
-            />
-          </AnimatePresence>
-
-          {/* Carousel Click Arrows (desktop focus, touch >= 44x44px) */}
-          {imageUrls.length > 1 && (
+        <div className="relative aspect-square w-full overflow-hidden rounded-2xl bg-slate-50 border border-slate-100 group select-none flex items-center justify-center">
+          {imageUrls.length === 0 ? (
+            <div className="flex flex-col items-center justify-center gap-2 text-slate-400">
+              <CameraOff className="h-12 w-12 text-slate-300 animate-pulse" />
+              <span className="text-sm font-semibold font-sans">No Image Available</span>
+            </div>
+          ) : (
             <>
-              <button
-                onClick={handlePrevImage}
-                className="absolute left-4 top-1/2 -translate-y-1/2 flex h-11 w-11 items-center justify-center rounded-full bg-white/90 text-slate-700 shadow-md backdrop-blur-xs transition-all hover:scale-105 active:scale-95 hover:bg-white z-10 cursor-pointer"
-                aria-label="Previous image"
-              >
-                <ChevronLeft className="h-6 w-6" />
-              </button>
-              <button
-                onClick={handleNextImage}
-                className="absolute right-4 top-1/2 -translate-y-1/2 flex h-11 w-11 items-center justify-center rounded-full bg-white/90 text-slate-700 shadow-md backdrop-blur-xs transition-all hover:scale-105 active:scale-95 hover:bg-white z-10 cursor-pointer"
-                aria-label="Next image"
-              >
-                <ChevronRight className="h-6 w-6" />
-              </button>
+              <AnimatePresence mode="wait">
+                <motion.img
+                  key={activeImgIndex}
+                  src={imageUrls[activeImgIndex]}
+                  alt={product.title}
+                  className="h-full w-full object-cover cursor-grab active:cursor-grabbing"
+                  initial={{ opacity: 0, scale: 0.96 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.96 }}
+                  transition={{ duration: 0.2 }}
+                  drag="x"
+                  dragConstraints={{ left: 0, right: 0 }}
+                  dragElastic={0.4}
+                  onDragEnd={(e, info) => {
+                    if (info.offset.x > 50) {
+                      handlePrevImage();
+                    } else if (info.offset.x < -50) {
+                      handleNextImage();
+                    }
+                  }}
+                />
+              </AnimatePresence>
+
+              {/* Carousel Click Arrows (desktop focus, touch >= 44x44px) */}
+              {imageUrls.length > 1 && (
+                <>
+                  <button
+                    onClick={handlePrevImage}
+                    className="absolute left-4 top-1/2 -translate-y-1/2 flex h-11 w-11 items-center justify-center rounded-full bg-white/90 text-slate-700 shadow-md backdrop-blur-xs transition-all hover:scale-105 active:scale-95 hover:bg-white z-10 cursor-pointer"
+                    aria-label="Previous image"
+                  >
+                    <ChevronLeft className="h-6 w-6" />
+                  </button>
+                  <button
+                    onClick={handleNextImage}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 flex h-11 w-11 items-center justify-center rounded-full bg-white/90 text-slate-700 shadow-md backdrop-blur-xs transition-all hover:scale-105 active:scale-95 hover:bg-white z-10 cursor-pointer"
+                    aria-label="Next image"
+                  >
+                    <ChevronRight className="h-6 w-6" />
+                  </button>
+                </>
+              )}
             </>
           )}
         </div>
@@ -262,46 +281,34 @@ export default function ProductDetailsClient({ product }: ProductDetailsClientPr
 
         {/* Action Controls Column */}
         <div className="mt-8 border-t border-slate-100 pt-8 space-y-4">
-          <div className="flex flex-col sm:flex-row gap-4 items-stretch sm:items-center">
-            {/* Quantity Selector */}
-            {product.stock > 0 && (
-              <div className="flex items-center border border-slate-200 rounded-xl bg-slate-50 min-h-[44px] self-start px-2">
+          <div className="flex items-center gap-3">
+            {/* Cart, Buy Now & Wishlist Actions */}
+            <div className="flex items-center gap-3 flex-1">
+              <div className="flex flex-col-reverse sm:flex-row gap-3 flex-1">
+                {/* Add to Cart Button (Outline style) */}
                 <button
-                  onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                  className="flex items-center justify-center h-9 w-9 text-slate-500 hover:text-slate-800 font-bold transition-colors cursor-pointer min-h-[36px] min-w-[36px]"
-                  disabled={quantity <= 1}
-                  aria-label="Decrease quantity"
+                  onClick={handleAddToCart}
+                  disabled={product.stock === 0}
+                  className="flex-1 min-h-[44px] h-11 flex items-center justify-center gap-2 rounded-xl border border-brand-blue bg-white text-brand-blue hover:bg-brand-blue-light/10 font-bold text-sm shadow-xs transition-all duration-200 active:scale-98 disabled:bg-slate-100 disabled:text-slate-400 disabled:border-slate-200 disabled:pointer-events-none cursor-pointer whitespace-nowrap"
                 >
-                  -
+                  <ShoppingBag className="h-4 w-4" />
+                  {product.stock === 0 ? "Out of Stock" : "Add to Cart"}
                 </button>
-                <span className="w-10 text-center font-bold text-slate-800 text-sm select-none">
-                  {quantity}
-                </span>
+
+                {/* Buy Now Button (Solid style) */}
                 <button
-                  onClick={() => setQuantity(Math.min(product.stock, quantity + 1))}
-                  className="flex items-center justify-center h-9 w-9 text-slate-500 hover:text-slate-800 font-bold transition-colors cursor-pointer min-h-[36px] min-w-[36px]"
-                  disabled={quantity >= product.stock}
-                  aria-label="Increase quantity"
+                  onClick={handleBuyNow}
+                  disabled={product.stock === 0}
+                  className="flex-1 min-h-[44px] h-11 flex items-center justify-center gap-2 rounded-xl bg-brand-blue text-white hover:bg-brand-blue-dark font-bold text-sm shadow-xs transition-all duration-200 active:scale-98 disabled:bg-slate-100 disabled:text-slate-400 disabled:pointer-events-none cursor-pointer whitespace-nowrap"
                 >
-                  +
+                  <CreditCard className="h-4 w-4" />
+                  {product.stock === 0 ? "Out of Stock" : "Buy Now"}
                 </button>
               </div>
-            )}
-
-            {/* Cart & Wishlist Actions */}
-            <div className="flex items-center gap-3 flex-1">
-              <button
-                onClick={handleAddToCart}
-                disabled={product.stock === 0}
-                className="flex-1 min-h-[44px] flex items-center justify-center gap-2 rounded-xl bg-brand-blue text-white hover:bg-brand-blue-dark font-bold text-sm shadow-xs transition-all duration-200 active:scale-98 disabled:bg-slate-100 disabled:text-slate-400 disabled:pointer-events-none"
-              >
-                <ShoppingBag className="h-4 w-4" />
-                {product.stock === 0 ? "Out of Stock" : "Add to Cart"}
-              </button>
 
               <button
                 onClick={handleToggleWishlist}
-                className={`flex h-11 w-11 items-center justify-center rounded-xl border transition-all cursor-pointer hover:scale-105 active:scale-95 ${
+                className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border transition-all cursor-pointer hover:scale-105 active:scale-95 ${
                   isWishlisted
                     ? "border-red-200 bg-red-50 text-red-500 hover:bg-red-100"
                     : "border-slate-200 bg-white text-slate-400 hover:text-slate-600 hover:border-slate-300"

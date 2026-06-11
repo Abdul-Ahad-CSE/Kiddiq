@@ -1,5 +1,5 @@
 "use client";
-
+import Link from "next/link";
 import React, { useState, useEffect, useTransition } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import type { Order, OrderStatus, VerificationStatus } from "@/generated/prisma/client";
@@ -253,6 +253,12 @@ export default function OrdersGridView({
             Track, search, verify and update customer purchases from a unified control grid.
           </p>
         </div>
+        <Link
+          href="/admin/orders/create"
+          className="w-full md:w-auto h-12 min-h-[44px] px-6 inline-flex items-center justify-center bg-slate-900 text-white font-bold text-xs uppercase tracking-wider hover:bg-slate-800 transition-all focus:outline-none"
+        >
+          Create Order
+        </Link>
       </div>
 
       {/* Filter and Search Bar */}

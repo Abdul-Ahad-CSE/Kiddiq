@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect, useTransition } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useForm, useWatch } from "react-hook-form";
@@ -11,6 +11,7 @@ import { checkoutSchema, CheckoutFormInput } from "@/lib/validation";
 import { motion, AnimatePresence } from "framer-motion";
 import { createOrder } from "@/app/actions/order";
 import { useRouter } from "next/navigation";
+import { validateCouponCode } from "@/app/actions/admin-coupons";
 
 // List of all 64 districts in Bangladesh, sorted alphabetically with Chattogram and Dhaka pinned at the top
 const BANGLADESH_DISTRICTS = [
@@ -92,10 +93,62 @@ export default function CheckoutClient({ chattogramAreas }: CheckoutClientProps)
   const [isPending, setIsPending] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
+  // Subtotal Calculation (declared early to resolve dependency order for compilers/static-analysis)
+  const subtotal = useMemo(() => {
+    return cartItems.reduce((acc, item) => acc + item.price * item.quantity, 0);
+  }, [cartItems]);
+
   // Promo code states
   const [promoInput, setPromoInput] = useState("");
-  const [appliedPromo, setAppliedPromo] = useState<string | null>(null);
   const [promoError, setPromoError] = useState("");
+  const [wasCouponAutoRemoved, setWasCouponAutoRemoved] = useState(false);
+  const [isApplyingPromo, startPromoTransition] = useTransition();
+
+  // Read appliedCoupon and applyCoupon from Zustand store
+  const appliedCoupon = useCartState((state) => state.appliedCoupon, null);
+  const applyCoupon = useCartStore((state) => state.applyCoupon);
+
+  // Synchronize promoInput and check for auto-removal via safe async ticks
+  useEffect(() => {
+    if (appliedCoupon) {
+      const activeCode = appliedCoupon.code;
+      const timer = setTimeout(() => {
+        setPromoInput(activeCode);
+        setWasCouponAutoRemoved(false);
+      }, 0);
+      return () => clearTimeout(timer);
+    } else {
+      const timer = setTimeout(() => {
+        setPromoInput((prev) => {
+          if (prev) {
+            setWasCouponAutoRemoved(true);
+          }
+          return "";
+        });
+      }, 0);
+      return () => clearTimeout(timer);
+    }
+  }, [appliedCoupon]);
+
+  const handleApplyPromo = () => {
+    const trimmed = promoInput.trim().toUpperCase();
+    if (!trimmed) {
+      setPromoError("Please enter a code");
+      return;
+    }
+    setPromoError("");
+    setWasCouponAutoRemoved(false);
+
+    startPromoTransition(async () => {
+      const res = await validateCouponCode(trimmed, subtotal);
+      if (res.success && res.coupon) {
+        applyCoupon(res.coupon);
+        setPromoError("");
+      } else {
+        setPromoError(res.error || "Invalid promo code");
+      }
+    });
+  };
 
   // Cart actions from Zustand store
   const updateQuantity = useCartStore((state) => state.updateQuantity);
@@ -119,18 +172,13 @@ export default function CheckoutClient({ chattogramAreas }: CheckoutClientProps)
   const watchedPaymentOption = useWatch({ control, name: "paymentOption" });
   const watchedPaymentMethod = useWatch({ control, name: "paymentMethod" });
 
-  // Subtotal Calculation
-  const subtotal = useMemo(() => {
-    return cartItems.reduce((acc, item) => acc + item.price * item.quantity, 0);
-  }, [cartItems]);
-
-  // Promo Code Discount Calculation (10% off using KIDDIQ10)
+  // Promo Code Discount Calculation
   const discount = useMemo(() => {
-    if (appliedPromo === "KIDDIQ10") {
-      return Math.round(subtotal * 0.1);
+    if (appliedCoupon) {
+      return Math.round(subtotal * (appliedCoupon.discountPercent / 100));
     }
     return 0;
-  }, [appliedPromo, subtotal]);
+  }, [appliedCoupon, subtotal]);
 
   // Real-time Delivery Charge Calculation
   const deliveryCharge = useMemo(() => {
@@ -200,7 +248,7 @@ export default function CheckoutClient({ chattogramAreas }: CheckoutClientProps)
     setIsPending(true);
     setSubmitError(null);
     try {
-      const res = await createOrder(data, cartItems, appliedPromo);
+      const res = await createOrder(data, cartItems, appliedCoupon ? appliedCoupon.code : null);
       if (res.success && res.orderId) {
         clearCart();
         router.push("/order-status/" + res.orderId);
@@ -799,23 +847,26 @@ export default function CheckoutClient({ chattogramAreas }: CheckoutClientProps)
             <div className="flex gap-2">
               <input
                 type="text"
-                placeholder="Promo Code (e.g. KIDDIQ10)"
+                placeholder="Promo Code (e.g. KIDDIQ15)"
                 value={promoInput}
                 onChange={(e) => {
                   setPromoInput(e.target.value.toUpperCase());
                   setPromoError("");
+                  setWasCouponAutoRemoved(false);
                 }}
-                disabled={!!appliedPromo || isPending}
+                disabled={!!appliedCoupon || isPending || isApplyingPromo}
                 className="flex-1 min-h-[44px] rounded-xl border border-slate-200 px-3 text-xs bg-slate-50 focus:bg-white focus:ring-2 focus:ring-brand-blue/20 focus:border-brand-blue outline-hidden transition-all text-slate-800 disabled:opacity-60 uppercase"
               />
-              {appliedPromo ? (
+              {appliedCoupon ? (
                 <button
                   type="button"
                   onClick={() => {
-                    setAppliedPromo(null);
+                    applyCoupon(null);
                     setPromoInput("");
+                    setPromoError("");
+                    setWasCouponAutoRemoved(false);
                   }}
-                  disabled={isPending}
+                  disabled={isPending || isApplyingPromo}
                   className="min-h-[44px] px-4 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold text-xs transition-colors cursor-pointer disabled:opacity-50"
                 >
                   Remove
@@ -823,28 +874,33 @@ export default function CheckoutClient({ chattogramAreas }: CheckoutClientProps)
               ) : (
                 <button
                   type="button"
-                  onClick={() => {
-                    if (promoInput.trim() === "KIDDIQ10") {
-                      setAppliedPromo("KIDDIQ10");
-                      setPromoError("");
-                    } else if (promoInput.trim() === "") {
-                      setPromoError("Please enter a code");
-                    } else {
-                      setPromoError("Invalid promo code");
-                    }
-                  }}
-                  disabled={isPending}
-                  className="min-h-[44px] px-4 rounded-xl bg-brand-blue hover:bg-brand-blue-dark text-white font-bold text-xs transition-colors cursor-pointer disabled:opacity-50"
+                  onClick={handleApplyPromo}
+                  disabled={isPending || isApplyingPromo}
+                  className="min-h-[44px] px-4 rounded-xl bg-brand-blue hover:bg-brand-blue-dark text-white font-bold text-xs transition-colors cursor-pointer disabled:opacity-50 flex items-center justify-center min-w-[70px]"
                 >
-                  Apply
+                  {isApplyingPromo ? (
+                    <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                  ) : (
+                    "Apply"
+                  )}
                 </button>
               )}
             </div>
             {promoError && (
               <p className="mt-1.5 text-[11px] font-semibold text-rose-500">{promoError}</p>
             )}
-            {appliedPromo && (
-              <p className="mt-1.5 text-[11px] font-semibold text-emerald-600">Promo code KIDDIQ10 applied (10% off)!</p>
+            {appliedCoupon && (
+              <p className="mt-1.5 text-[11px] font-semibold text-emerald-600">
+                Promo code {appliedCoupon.code} applied ({appliedCoupon.discountPercent}% off)!
+              </p>
+            )}
+            {wasCouponAutoRemoved && (
+              <p className="mt-1.5 text-[11px] font-semibold text-rose-500 leading-snug">
+                Coupon removed: Cart subtotal fell below the required minimum.
+              </p>
             )}
           </div>
 

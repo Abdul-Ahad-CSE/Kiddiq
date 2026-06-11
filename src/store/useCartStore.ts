@@ -12,15 +12,32 @@ export interface CartItem {
   stock: number;
 }
 
+export interface CouponState {
+  code: string;
+  discountPercent: number;
+  minOrderAmount: number;
+}
+
 interface CartStore {
   items: CartItem[];
   wishlist: string[];
+  appliedCoupon: CouponState | null;
   addItem: (item: Omit<CartItem, 'quantity'>) => void;
   removeItem: (id: string) => void;
   updateQuantity: (id: string, quantity: number) => void;
   clearCart: () => void;
   toggleWishlist: (productId: string) => void;
   isInWishlist: (productId: string) => boolean;
+  applyCoupon: (coupon: CouponState | null) => void;
+}
+
+function checkCouponValidity(items: CartItem[], coupon: CouponState | null): CouponState | null {
+  if (!coupon) return null;
+  const subtotal = items.reduce((acc, item) => acc + item.price * item.quantity, 0);
+  if (subtotal < coupon.minOrderAmount) {
+    return null;
+  }
+  return coupon;
 }
 
 export const useCartStore = create<CartStore>()(
@@ -28,30 +45,36 @@ export const useCartStore = create<CartStore>()(
     (set, get) => ({
       items: [],
       wishlist: [],
+      appliedCoupon: null,
+      applyCoupon: (coupon) => set({ appliedCoupon: coupon }),
       addItem: (item) => {
         const currentItems = get().items;
         const existingItem = currentItems.find((i) => i.id === item.id);
+        let newItems = currentItems;
 
         if (existingItem) {
           const newQuantity = existingItem.quantity + 1;
           if (newQuantity <= item.stock) {
-            set({
-              items: currentItems.map((i) =>
-                i.id === item.id ? { ...i, quantity: newQuantity } : i
-              ),
-            });
+            newItems = currentItems.map((i) =>
+              i.id === item.id ? { ...i, quantity: newQuantity } : i
+            );
           }
         } else {
           if (item.stock > 0) {
-            set({
-              items: [...currentItems, { ...item, quantity: 1 }],
-            });
+            newItems = [...currentItems, { ...item, quantity: 1 }];
           }
         }
+
+        set({
+          items: newItems,
+          appliedCoupon: checkCouponValidity(newItems, get().appliedCoupon),
+        });
       },
       removeItem: (id) => {
+        const newItems = get().items.filter((item) => item.id !== id);
         set({
-          items: get().items.filter((item) => item.id !== id),
+          items: newItems,
+          appliedCoupon: checkCouponValidity(newItems, get().appliedCoupon),
         });
       },
       updateQuantity: (id, quantity) => {
@@ -59,14 +82,16 @@ export const useCartStore = create<CartStore>()(
         const item = currentItems.find((i) => i.id === id);
         if (item) {
           const clampedQuantity = Math.max(1, Math.min(quantity, item.stock));
+          const newItems = currentItems.map((i) =>
+            i.id === id ? { ...i, quantity: clampedQuantity } : i
+          );
           set({
-            items: currentItems.map((i) =>
-              i.id === id ? { ...i, quantity: clampedQuantity } : i
-            ),
+            items: newItems,
+            appliedCoupon: checkCouponValidity(newItems, get().appliedCoupon),
           });
         }
       },
-      clearCart: () => set({ items: [] }),
+      clearCart: () => set({ items: [], appliedCoupon: null }),
       toggleWishlist: (productId) => {
         const currentWishlist = get().wishlist;
         const exists = currentWishlist.includes(productId);

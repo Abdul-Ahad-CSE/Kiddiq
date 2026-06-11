@@ -3,7 +3,8 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Star, Heart, ShoppingBag } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Star, Heart, ShoppingBag, CreditCard } from "lucide-react";
 import { useCartStore, useCartState } from "@/store/useCartStore";
 
 export interface ProductCardProps {
@@ -20,6 +21,7 @@ export interface ProductCardProps {
 }
 
 export default function ProductCard({ product }: ProductCardProps) {
+  const router = useRouter();
   const addItem = useCartStore((state) => state.addItem);
   const toggleWishlist = useCartStore((state) => state.toggleWishlist);
   const isWishlisted = useCartState(
@@ -66,6 +68,22 @@ export default function ProductCard({ product }: ProductCardProps) {
       image: imgSrc,
       stock: product.stock,
     });
+  };
+
+  const handleBuyNow = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    addItem({
+      id: product.id,
+      title: product.title,
+      slug: product.slug,
+      price: product.price,
+      image: imgSrc,
+      stock: product.stock,
+    });
+    
+    router.push("/checkout");
   };
 
   const handleToggleWishlist = (e: React.MouseEvent) => {
@@ -145,15 +163,27 @@ export default function ProductCard({ product }: ProductCardProps) {
             )}
           </div>
 
-          {/* Add to Cart Button with Custom Transition */}
-          <button
-            onClick={handleAddToCart}
-            disabled={product.stock === 0}
-            className="w-full flex items-center justify-center gap-2 rounded-xl bg-brand-blue py-2.5 px-4 text-sm font-bold text-white shadow-xs transition-all duration-300 hover:-translate-y-0.5 hover:bg-brand-blue-dark hover:shadow-md active:scale-98 disabled:pointer-events-none disabled:bg-slate-100 disabled:text-slate-400"
-          >
-            <ShoppingBag className="h-4 w-4" />
-            {product.stock === 0 ? "Out of Stock" : "Add to Cart"}
-          </button>
+          {/* Action Buttons Grid */}
+          <div className="flex flex-col-reverse sm:flex-row gap-2">
+            {/* Add to Cart Button (Outline style) */}
+            <button
+              onClick={handleAddToCart}
+              disabled={product.stock === 0}
+              className="flex-1 flex h-11 items-center justify-center gap-1 rounded-xl border border-brand-blue bg-white text-[10px] sm:text-xs font-bold text-brand-blue shadow-xs transition-all duration-300 hover:-translate-y-0.5 hover:bg-brand-blue-light/10 active:scale-98 disabled:pointer-events-none disabled:bg-slate-100 disabled:border-slate-200 disabled:text-slate-400 cursor-pointer whitespace-nowrap"
+            >
+              <ShoppingBag className="h-3.5 w-3.5" />
+              {product.stock === 0 ? "Out of Stock" : "Add to Cart"}
+            </button>
+            {/* Buy Now Button (Solid brand color) */}
+            <button
+              onClick={handleBuyNow}
+              disabled={product.stock === 0}
+              className="flex-1 flex h-11 items-center justify-center gap-1 rounded-xl bg-brand-blue text-[10px] sm:text-xs font-bold text-white shadow-xs transition-all duration-300 hover:-translate-y-0.5 hover:bg-brand-blue-dark hover:shadow-md active:scale-98 disabled:pointer-events-none disabled:bg-slate-100 disabled:text-slate-400 cursor-pointer whitespace-nowrap"
+            >
+              <CreditCard className="h-3.5 w-3.5" />
+              {product.stock === 0 ? "Out of Stock" : "Buy Now"}
+            </button>
+          </div>
         </div>
       </div>
     </div>

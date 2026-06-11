@@ -117,6 +117,8 @@ model Order {
   items               Json               // JSON array of items (id, title, price, quantity)
   subtotal            Float
   deliveryCharge      Float
+  couponCode          String?
+  discount            Float              @default(0)
   
   // Payment Data
   paymentOption       String             // "COD" or "FULL_ADVANCE"
@@ -168,4 +170,14 @@ model AuditLog {
   targetId    String   // Order ID
   changes     Json     // JSON representation of mutated attributes or audit details
   createdAt   DateTime @default(now())
+}
+
+model Coupon {
+  id              String   @id @default(uuid())
+  code            String   @unique
+  discountPercent Float
+  minOrderAmount  Float
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 }

@@ -382,7 +382,7 @@ Back-office order grid, sales analytics, and order mutations.
     - **Cloudinary Image Upload Integration**: Integrate the `ImageUpload` component into the Product form to support uploading multiple images. Construct a list of secure Cloudinary URL strings and store them in the database `images` field as a JSONB array.
   - **VERIFY**: `Completed. Built a custom, reusable MultiImageUpload.tsx component to support uploading up to 5 Cloudinary image assets with hover delete actions. Created secure, validated CRUD Server Actions in admin-products.ts protected by verifySessionAndPermissions. Configured page.tsx route with page-level role guards and developed ProductManagementClient.tsx client view with KPI metrics cards (total, out of stock, low stock), debounced text search, add/edit/delete modals, and slug auto-generation. Complies with Purple Ban and touch targets >= 48px. Passed ESLint checks and all 6 master validation checks.`
 
-- [ ] **TSK-020: Omnichannel Order Creation**
+- [x] **TSK-020: Omnichannel Order Creation**
   - **Agent**: `backend-specialist`
   - **Skills**: `api-patterns`, `database-design`
   - **Priority**: `P1`
@@ -394,7 +394,7 @@ Back-office order grid, sales analytics, and order mutations.
     - Build a searchable product selection dropdown to add multiple items from the database catalog and input quantities.
     - Add input fields for custom discounts, manual shipping adjustments, and pricing overrides.
     - Include a `salesChannel` dropdown tag field containing options: `Facebook`, `Instagram`, `Direct`.
-  - **VERIFY**: `Submit a manual order, confirm it computes subtotal/totals correctly, decrements stock levels, and sets the salesChannel tag correctly in the database. Verify that users without MANAGE_ORDERS cannot access or submit.`
+  - **VERIFY**: `Completed. Built createOmnichannelOrder server action inside admin-orders.ts, protected by MANAGE_ORDERS permissions check, executing inside a prisma transaction to verify unique trxId, check stock, calculate delivery zones dynamically (৳60 for Chattogram, ৳120 elsewhere), update stock inventory, write audit logs, and log sales channels in adminNotes. Created create/page.tsx Server Component route and CreateOrderClient.tsx client view featuring searchable live product selection, dynamic totals calculations, and loading spinners. Strict Purple Ban and touch targets >= 44px compliant. Passed ESLint checks and checklist validator.`
 
 ---
 
