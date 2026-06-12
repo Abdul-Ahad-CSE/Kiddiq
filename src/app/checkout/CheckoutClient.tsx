@@ -6,7 +6,7 @@ import Image from "next/image";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ShoppingBag, Trash2, AlertTriangle } from "lucide-react";
-import { useCartStore, useCartState } from "@/store/useCartStore";
+import { useCartStore, useCartState, getCartSubtotal, getStandardSubtotal } from "@/store/useCartStore";
 import { checkoutSchema, CheckoutFormInput } from "@/lib/validation";
 import { motion, AnimatePresence } from "framer-motion";
 import { createOrder } from "@/app/actions/order";
@@ -103,7 +103,33 @@ export default function CheckoutClient({ chattogramAreas, userProfile }: Checkou
 
   // Subtotal Calculation (declared early to resolve dependency order for compilers/static-analysis)
   const subtotal = useMemo(() => {
-    return cartItems.reduce((acc, item) => acc + item.price * item.quantity, 0);
+    return getCartSubtotal(cartItems);
+  }, [cartItems]);
+
+  const standardSubtotal = useMemo(() => {
+    return getStandardSubtotal(cartItems);
+  }, [cartItems]);
+
+  const preorderAdvanceSubtotal = useMemo(() => {
+    return cartItems
+      .filter((item) => item.isPreorder)
+      .reduce((acc, item) => {
+        const advancePercent = item.preorderAdvancePercent ?? 50;
+        return acc + (item.price * (advancePercent / 100)) * item.quantity;
+      }, 0);
+  }, [cartItems]);
+
+  const preorderRemainingSubtotal = useMemo(() => {
+    return cartItems
+      .filter((item) => item.isPreorder)
+      .reduce((acc, item) => {
+        const advancePercent = item.preorderAdvancePercent ?? 50;
+        return acc + (item.price * (1 - advancePercent / 100)) * item.quantity;
+      }, 0);
+  }, [cartItems]);
+
+  const hasOnlyPreorders = useMemo(() => {
+    return cartItems.length > 0 && cartItems.every((item) => item.isPreorder);
   }, [cartItems]);
 
   // Promo code states
@@ -115,6 +141,17 @@ export default function CheckoutClient({ chattogramAreas, userProfile }: Checkou
   // Read appliedCoupon and applyCoupon from Zustand store
   const appliedCoupon = useCartState((state) => state.appliedCoupon, null);
   const applyCoupon = useCartStore((state) => state.applyCoupon);
+
+  // Clear promo code automatically if cart is 100% preorder items
+  useEffect(() => {
+    if (hasOnlyPreorders && (appliedCoupon || promoInput)) {
+      applyCoupon(null);
+      const timer = setTimeout(() => {
+        setPromoInput("");
+      }, 0);
+      return () => clearTimeout(timer);
+    }
+  }, [hasOnlyPreorders, appliedCoupon, promoInput, applyCoupon]);
 
   // Synchronize promoInput and check for auto-removal via safe async ticks
   useEffect(() => {
@@ -148,7 +185,7 @@ export default function CheckoutClient({ chattogramAreas, userProfile }: Checkou
     setWasCouponAutoRemoved(false);
 
     startPromoTransition(async () => {
-      const res = await validateCouponCode(trimmed, subtotal);
+      const res = await validateCouponCode(trimmed, standardSubtotal);
       if (res.success && res.coupon) {
         applyCoupon(res.coupon);
         setPromoError("");
@@ -199,13 +236,14 @@ export default function CheckoutClient({ chattogramAreas, userProfile }: Checkou
   // Promo Code Discount Calculation
   const discount = useMemo(() => {
     if (appliedCoupon) {
-      return Math.round(subtotal * (appliedCoupon.discountPercent / 100));
+      return Math.round(standardSubtotal * (appliedCoupon.discountPercent / 100));
     }
     return 0;
-  }, [appliedCoupon, subtotal]);
+  }, [appliedCoupon, standardSubtotal]);
 
   // Real-time Delivery Charge Calculation
   const deliveryCharge = useMemo(() => {
+    if (hasOnlyPreorders) return 0;
     if (!watchedDistrict || !watchedArea) return 0;
     
     if (watchedDistrict === "Chattogram") {
@@ -219,7 +257,7 @@ export default function CheckoutClient({ chattogramAreas, userProfile }: Checkou
     
     // Default nationwide rate
     return 120;
-  }, [watchedDistrict, watchedArea, chattogramAreas]);
+  }, [watchedDistrict, watchedArea, chattogramAreas, hasOnlyPreorders]);
 
   // Grand Total Calculation
   const grandTotal = Math.max(0, subtotal - discount + deliveryCharge);
@@ -231,27 +269,34 @@ export default function CheckoutClient({ chattogramAreas, userProfile }: Checkou
     }
     if (watchedPaymentOption === "cod") {
       return {
-        paidNow: deliveryCharge,
-        dueOnDelivery: Math.max(0, subtotal - discount),
+        paidNow: preorderAdvanceSubtotal + deliveryCharge,
+        dueOnDelivery: Math.max(0, preorderRemainingSubtotal + standardSubtotal - discount),
       };
     }
     // "full"
     return {
       paidNow: grandTotal,
-      dueOnDelivery: 0,
+      dueOnDelivery: preorderRemainingSubtotal,
     };
-  }, [watchedPaymentOption, deliveryCharge, subtotal, discount, grandTotal]);
+  }, [watchedPaymentOption, deliveryCharge, preorderAdvanceSubtotal, preorderRemainingSubtotal, standardSubtotal, discount, grandTotal]);
 
   const whatsappBypassUrl = useMemo(() => {
     if (cartItems.length === 0) return "#";
 
     const itemsList = cartItems
-      .map(item => `  - ${item.quantity}x ${item.title} (Price: ৳${item.price * item.quantity})`)
+      .map(item => {
+        if (item.isPreorder) {
+          const advancePercent = item.preorderAdvancePercent ?? 50;
+          const advPrice = item.price * (advancePercent / 100);
+          return `  - [Pre-order] ${item.quantity}x ${item.title} (Advance: ৳${advPrice * item.quantity}, Full: ৳${item.price * item.quantity})`;
+        }
+        return `  - ${item.quantity}x ${item.title} (Price: ৳${item.price * item.quantity})`;
+      })
       .join("\n");
 
     const totalAmount = Math.max(0, subtotal - discount);
 
-    const message = `Hi Kiddiq, I would like to order:\n${itemsList}\n\nTotal: ৳${totalAmount}\n\nPlease guide me through the next steps for delivery!`;
+    const message = `Hi Kiddiq, I would like to order:\n${itemsList}\n\nTotal paid now/advance: ৳${totalAmount}\n\nPlease guide me through the next steps for delivery!`;
 
     return `https://wa.me/8801825462039?text=${encodeURIComponent(message)}`;
   }, [cartItems, subtotal, discount]);
@@ -557,7 +602,11 @@ export default function CheckoutClient({ chattogramAreas, userProfile }: Checkou
                 </span>
               </div>
               <div className="mt-2 text-xs text-slate-500 leading-relaxed">
-                Pay delivery charge now (৳{deliveryCharge}), pay the rest on delivery.
+                {preorderAdvanceSubtotal > 0 ? (
+                  `Pay preorder advance (৳${preorderAdvanceSubtotal}) + delivery charge now (৳${deliveryCharge}), pay the rest on delivery.`
+                ) : (
+                  `Pay delivery charge now (৳${deliveryCharge}), pay the rest on delivery.`
+                )}
               </div>
             </label>
 
@@ -588,7 +637,11 @@ export default function CheckoutClient({ chattogramAreas, userProfile }: Checkou
                 </span>
               </div>
               <div className="mt-2 text-xs text-slate-500 leading-relaxed">
-                Pay full amount now (৳{grandTotal}) and receive your order hassle-free.
+                {preorderRemainingSubtotal > 0 ? (
+                  `Pay ৳${grandTotal} now (preorder advance + standard items + delivery fee), and pay the remaining preorder balance (৳${preorderRemainingSubtotal}) on delivery.`
+                ) : (
+                  `Pay full amount now (৳${grandTotal}) and receive your order hassle-free.`
+                )}
               </div>
             </label>
           </div>
@@ -830,6 +883,23 @@ export default function CheckoutClient({ chattogramAreas, userProfile }: Checkou
                     <span className="block text-sm font-bold text-slate-800 truncate">
                       {item.title}
                     </span>
+
+                    {item.isPreorder && (
+                      <div className="my-1.5 space-y-1">
+                        <span className="inline-block bg-amber-100 text-amber-800 text-[10px] font-bold px-2 py-0.5 rounded-sm">
+                          Pre-order Advance ({item.preorderAdvancePercent ?? 50}%)
+                        </span>
+                        {item.preorderETA && (
+                          <span className="block text-[10px] text-slate-500 font-medium">
+                            ETA: {item.preorderETA}
+                          </span>
+                        )}
+                        <span className="block text-[10px] text-amber-600 font-medium leading-tight">
+                          Requires advance payment. Remaining amount due on delivery.
+                        </span>
+                      </div>
+                    )}
+
                     <div className="flex items-center gap-3">
                       {/* Quantity Selector */}
                       <div className="flex items-center border border-slate-200 rounded-lg bg-slate-50 overflow-hidden">
@@ -870,12 +940,28 @@ export default function CheckoutClient({ chattogramAreas, userProfile }: Checkou
                   </div>
                   {/* Right: Subtotal Price */}
                   <div className="text-right shrink-0">
-                    <span className="text-sm font-extrabold text-brand-blue-dark block">
-                      ৳{item.price * item.quantity}
-                    </span>
-                    <span className="text-[10px] text-slate-400 block mt-0.5">
-                      ৳{item.price} each
-                    </span>
+                    {item.isPreorder ? (
+                      <>
+                        <span className="text-sm font-extrabold text-brand-blue-dark block">
+                          ৳{((item.price * ((item.preorderAdvancePercent ?? 50) / 100)) * item.quantity).toLocaleString("en-BD")}
+                        </span>
+                        <span className="text-[10px] text-slate-500 font-medium line-through block">
+                          ৳{(item.price * item.quantity).toLocaleString("en-BD")} (Full Price)
+                        </span>
+                        <span className="text-[10px] text-emerald-600 block mt-0.5">
+                          ৳{(item.price * ((item.preorderAdvancePercent ?? 50) / 100)).toLocaleString("en-BD")} each (Advance)
+                        </span>
+                      </>
+                    ) : (
+                      <>
+                        <span className="text-sm font-extrabold text-brand-blue-dark block">
+                          ৳{(item.price * item.quantity).toLocaleString("en-BD")}
+                        </span>
+                        <span className="text-[10px] text-slate-400 block mt-0.5">
+                          ৳{item.price.toLocaleString("en-BD")} each
+                        </span>
+                      </>
+                    )}
                   </div>
                 </motion.div>
               ))}
@@ -894,7 +980,7 @@ export default function CheckoutClient({ chattogramAreas, userProfile }: Checkou
                   setPromoError("");
                   setWasCouponAutoRemoved(false);
                 }}
-                disabled={!!appliedCoupon || isPending || isApplyingPromo}
+                disabled={!!appliedCoupon || isPending || isApplyingPromo || hasOnlyPreorders}
                 className="flex-1 min-h-[44px] rounded-xl border border-slate-200 px-3 text-xs bg-slate-50 focus:bg-white focus:ring-2 focus:ring-brand-blue/20 focus:border-brand-blue outline-hidden transition-all text-slate-800 disabled:opacity-60 uppercase"
               />
               {appliedCoupon ? (
@@ -915,7 +1001,7 @@ export default function CheckoutClient({ chattogramAreas, userProfile }: Checkou
                 <button
                   type="button"
                   onClick={handleApplyPromo}
-                  disabled={isPending || isApplyingPromo}
+                  disabled={isPending || isApplyingPromo || hasOnlyPreorders}
                   className="min-h-[44px] px-4 rounded-xl bg-brand-blue hover:bg-brand-blue-dark text-white font-bold text-xs transition-colors cursor-pointer disabled:opacity-50 flex items-center justify-center min-w-[70px]"
                 >
                   {isApplyingPromo ? (
@@ -929,6 +1015,11 @@ export default function CheckoutClient({ chattogramAreas, userProfile }: Checkou
                 </button>
               )}
             </div>
+            {hasOnlyPreorders && (
+              <p className="mt-1.5 text-[11px] font-bold text-amber-600">
+                Promo codes cannot be applied to orders containing only pre-order items.
+              </p>
+            )}
             {promoError && (
               <p className="mt-1.5 text-[11px] font-semibold text-rose-500">{promoError}</p>
             )}

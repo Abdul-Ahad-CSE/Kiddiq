@@ -13,6 +13,7 @@ export interface ProductWithCategory {
   slug: string;
   description: string;
   price: number;
+  discountPrice?: number | null;
   categoryId: string;
   ageGroup: string;
   images: unknown;
@@ -38,6 +39,8 @@ export default function ProductDetailsClient({ product }: ProductDetailsClientPr
   const addItem = useCartStore((state) => state.addItem);
   const toggleWishlist = useCartStore((state) => state.toggleWishlist);
   const isWishlisted = useCartState((state) => state.isInWishlist(product.id), false);
+
+  const activePrice = product.discountPrice && product.discountPrice > 0 ? product.discountPrice : product.price;
 
   // States
   const [activeImgIndex, setActiveImgIndex] = useState(0);
@@ -77,7 +80,7 @@ export default function ProductDetailsClient({ product }: ProductDetailsClientPr
       id: product.id,
       title: product.title,
       slug: product.slug,
-      price: product.price,
+      price: activePrice,
       image: imageUrls[0] || PLACEHOLDER_IMAGE,
       stock: product.stock,
     });
@@ -88,7 +91,7 @@ export default function ProductDetailsClient({ product }: ProductDetailsClientPr
       id: product.id,
       title: product.title,
       slug: product.slug,
-      price: product.price,
+      price: activePrice,
       image: imageUrls[0] || PLACEHOLDER_IMAGE,
       stock: product.stock,
     });
@@ -100,7 +103,7 @@ export default function ProductDetailsClient({ product }: ProductDetailsClientPr
   };
 
   const handleWhatsAppOrder = () => {
-    const formattedPrice = `৳${product.price}`;
+    const formattedPrice = `৳${activePrice}`;
     const message = `Hi Kiddiq, I would like to order "${product.title}" (Price: ${formattedPrice}). Please guide me through the next steps for delivery!`;
     const whatsappUrl = `https://wa.me/8801825462039?text=${encodeURIComponent(message)}`;
     window.open(whatsappUrl, "_blank", "noopener,noreferrer");
@@ -225,9 +228,16 @@ export default function ProductDetailsClient({ product }: ProductDetailsClientPr
         {/* Stars and Price Row */}
         <div className="mt-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-100">
           {/* Price */}
-          <span className="text-3xl font-extrabold text-brand-blue-dark font-sans">
-            ৳{product.price}
-          </span>
+          <div className="flex flex-wrap items-baseline gap-3">
+            <span className="text-3xl font-extrabold text-brand-blue-dark font-sans">
+              ৳{activePrice}
+            </span>
+            {product.discountPrice && product.discountPrice > 0 && (
+              <span className="text-sm font-semibold text-slate-500 line-through">
+                ৳{product.price} (Full Price)
+              </span>
+            )}
+          </div>
           {/* Hardcoded high trust rating to match homepage best sellers */}
           <div className="flex items-center gap-1.5">
             <div className="flex items-center text-brand-yellow">

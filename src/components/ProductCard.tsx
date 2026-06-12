@@ -13,10 +13,14 @@ export interface ProductCardProps {
     title: string;
     slug: string;
     price: number;
+    discountPrice?: number | null;
     images: unknown; // JSON representation of string[]
     ageGroup: string;
     stock: number;
     benefits: string;
+    isPreorder?: boolean;
+    preorderAdvancePercent?: number | null;
+    preorderETA?: string | null;
   };
 }
 
@@ -48,8 +52,18 @@ export default function ProductCard({ product }: ProductCardProps) {
   const displayImage = imageUrls.length > 0 ? imageUrls[0] : "/logo.jpg";
   const [imgSrc, setImgSrc] = useState(displayImage);
 
+  // Determine if discount price is active
+  const isDiscountActive = product.discountPrice !== undefined && product.discountPrice !== null && product.discountPrice > 0;
+  const activePrice = isDiscountActive ? product.discountPrice! : product.price;
+
   // Format price
-  const formattedPrice = `৳${product.price}`;
+  const formattedPrice = `৳${activePrice}`;
+
+  // Calculate percentage off
+  let pctOff = 0;
+  if (isDiscountActive && product.price > 0) {
+    pctOff = Math.round(((product.price - (product.discountPrice || 0)) / product.price) * 100);
+  }
 
   // Age group badge display
   const displayAge = product.ageGroup.toLowerCase().startsWith("age")
@@ -64,9 +78,12 @@ export default function ProductCard({ product }: ProductCardProps) {
       id: product.id,
       title: product.title,
       slug: product.slug,
-      price: product.price,
+      price: activePrice,
       image: imgSrc,
       stock: product.stock,
+      isPreorder: product.isPreorder ?? false,
+      preorderAdvancePercent: product.preorderAdvancePercent ?? 50,
+      preorderETA: product.preorderETA ?? undefined,
     });
   };
 
@@ -78,9 +95,12 @@ export default function ProductCard({ product }: ProductCardProps) {
       id: product.id,
       title: product.title,
       slug: product.slug,
-      price: product.price,
+      price: activePrice,
       image: imgSrc,
       stock: product.stock,
+      isPreorder: product.isPreorder ?? false,
+      preorderAdvancePercent: product.preorderAdvancePercent ?? 50,
+      preorderETA: product.preorderETA ?? undefined,
     });
     
     router.push("/checkout");
@@ -113,6 +133,13 @@ export default function ProductCard({ product }: ProductCardProps) {
           {displayAge}
         </span>
 
+        {/* PRE-ORDER Badge */}
+        {product.isPreorder && process.env.NEXT_PUBLIC_ENABLE_PREORDERS === "true" && (
+          <span className="absolute top-13 left-3 z-10 rounded-full bg-amber-500/95 px-2.5 py-1 text-[10px] font-bold text-white shadow-xs backdrop-blur-xs">
+            PRE-ORDER
+          </span>
+        )}
+
         {/* Wishlist Button */}
         <button
           onClick={handleToggleWishlist}
@@ -125,6 +152,13 @@ export default function ProductCard({ product }: ProductCardProps) {
             }`}
           />
         </button>
+
+        {/* Discount Badge */}
+        {isDiscountActive && pctOff > 0 && (
+          <span className="absolute top-14 right-3 z-10 rounded-full bg-emerald-600 px-2.5 py-1 text-[10px] font-bold text-white shadow-xs backdrop-blur-xs">
+            {pctOff}% OFF
+          </span>
+        )}
       </div>
 
       {/* Product Details */}
@@ -150,12 +184,33 @@ export default function ProductCard({ product }: ProductCardProps) {
           {product.benefits}
         </p>
 
+        {/* Pre-order ETA and Advance Warning */}
+        {product.isPreorder && process.env.NEXT_PUBLIC_ENABLE_PREORDERS === "true" && (
+          <div className="mt-2 space-y-1">
+            {product.preorderETA && (
+              <span className="block text-[11px] font-semibold text-slate-650 bg-slate-50 border border-slate-100 rounded-md px-2 py-0.5 w-fit">
+                Estimated Delivery: {product.preorderETA}
+              </span>
+            )}
+            <span className="block text-[10px] font-bold text-amber-600 bg-amber-50 border border-amber-100 rounded-md px-2 py-0.5 w-fit">
+              Requires {product.preorderAdvancePercent ?? 50}% Advance
+            </span>
+          </div>
+        )}
+
         {/* Price & Action */}
         <div className="mt-auto pt-4">
-          <div className="mb-3 flex items-baseline justify-between">
-            <span className="font-sans text-lg font-extrabold text-brand-blue-dark">
-              {formattedPrice}
-            </span>
+          <div className="mb-3 flex flex-wrap items-baseline gap-2 justify-between">
+            <div className="flex items-baseline gap-2">
+              <span className="font-sans text-lg font-extrabold text-brand-blue-dark">
+                {formattedPrice}
+              </span>
+              {isDiscountActive && (
+                <span className="text-xs font-semibold text-slate-500 line-through">
+                  ৳{product.price} (Full Price)
+                </span>
+              )}
+            </div>
             {product.stock <= 5 && product.stock > 0 && (
               <span className="text-[10px] font-bold text-orange-500">
                 Only {product.stock} left!

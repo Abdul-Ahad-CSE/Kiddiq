@@ -14,12 +14,24 @@ const productSchema = z.object({
   description: z.string().min(5, "Description must be at least 5 characters"),
   price: z.number().positive("Price must be a positive number"),
   costPrice: z.number().nonnegative("Buy-in cost cannot be negative").default(0),
+  discountPrice: z.number().nonnegative("Discount price cannot be negative").nullish(),
   categoryId: z.string().min(1, "Please select a category"),
   ageGroup: z.string().min(1, "Please select an age group"),
   images: z.array(z.string().url("Must be a valid image URL")).min(1, "At least one product image is required"),
   stock: z.number().int("Stock must be an integer").nonnegative("Stock cannot be negative"),
   benefits: z.string().min(2, "Benefits must be at least 2 characters"),
   featured: z.boolean().default(false),
+  isPreorder: z.boolean().default(false),
+  preorderAdvancePercent: z.number().int().min(1).max(100).default(50),
+  preorderETA: z.string().nullish(),
+}).refine((data) => {
+  if (data.discountPrice !== undefined && data.discountPrice !== null && data.discountPrice !== 0) {
+    return data.discountPrice < data.price;
+  }
+  return true;
+}, {
+  message: "Discount price must be strictly less than the regular price",
+  path: ["discountPrice"],
 });
 
 export async function createProduct(data: {
@@ -28,12 +40,16 @@ export async function createProduct(data: {
   description: string;
   price: number;
   costPrice: number;
+  discountPrice?: number | null;
   categoryId: string;
   ageGroup: string;
   images: string[];
   stock: number;
   benefits: string;
   featured: boolean;
+  isPreorder?: boolean;
+  preorderAdvancePercent?: number;
+  preorderETA?: string | null;
 }) {
   try {
     const session = await verifySessionAndPermissions(["MANAGE_PRODUCTS"]);
@@ -56,12 +72,16 @@ export async function createProduct(data: {
         description: validated.description.trim(),
         price: validated.price,
         costPrice: validated.costPrice,
+        discountPrice: validated.discountPrice,
         categoryId: validated.categoryId,
         ageGroup: validated.ageGroup,
         images: validated.images, // JSON array
         stock: validated.stock,
         benefits: validated.benefits.trim(),
         featured: validated.featured,
+        isPreorder: validated.isPreorder,
+        preorderAdvancePercent: validated.preorderAdvancePercent,
+        preorderETA: validated.preorderETA && validated.preorderETA.trim() ? validated.preorderETA.trim() : null,
       },
     });
 
@@ -71,7 +91,15 @@ export async function createProduct(data: {
       "CREATE_PRODUCT",
       "Product",
       newProduct.id,
-      { title: newProduct.title, slug: newProduct.slug, costPrice: newProduct.costPrice }
+      {
+        title: newProduct.title,
+        slug: newProduct.slug,
+        costPrice: newProduct.costPrice,
+        discountPrice: newProduct.discountPrice,
+        isPreorder: newProduct.isPreorder,
+        preorderAdvancePercent: newProduct.preorderAdvancePercent,
+        preorderETA: newProduct.preorderETA,
+      }
     );
 
     return { success: true, product: newProduct };
@@ -93,12 +121,16 @@ export async function updateProduct(
     description: string;
     price: number;
     costPrice: number;
+    discountPrice?: number | null;
     categoryId: string;
     ageGroup: string;
     images: string[];
     stock: number;
     benefits: string;
     featured: boolean;
+    isPreorder?: boolean;
+    preorderAdvancePercent?: number;
+    preorderETA?: string | null;
   }
 ) {
   try {
@@ -133,12 +165,16 @@ export async function updateProduct(
         description: validated.description.trim(),
         price: validated.price,
         costPrice: validated.costPrice,
+        discountPrice: validated.discountPrice,
         categoryId: validated.categoryId,
         ageGroup: validated.ageGroup,
         images: validated.images,
         stock: validated.stock,
         benefits: validated.benefits.trim(),
         featured: validated.featured,
+        isPreorder: validated.isPreorder,
+        preorderAdvancePercent: validated.preorderAdvancePercent,
+        preorderETA: validated.preorderETA && validated.preorderETA.trim() ? validated.preorderETA.trim() : null,
       },
     });
 
@@ -149,8 +185,28 @@ export async function updateProduct(
       "Product",
       id,
       { 
-        old: { title: product.title, slug: product.slug, price: product.price, stock: product.stock, costPrice: product.costPrice },
-        new: { title: updatedProduct.title, slug: updatedProduct.slug, price: updatedProduct.price, stock: updatedProduct.stock, costPrice: updatedProduct.costPrice } 
+        old: {
+          title: product.title,
+          slug: product.slug,
+          price: product.price,
+          stock: product.stock,
+          costPrice: product.costPrice,
+          discountPrice: product.discountPrice,
+          isPreorder: product.isPreorder,
+          preorderAdvancePercent: product.preorderAdvancePercent,
+          preorderETA: product.preorderETA,
+        },
+        new: {
+          title: updatedProduct.title,
+          slug: updatedProduct.slug,
+          price: updatedProduct.price,
+          stock: updatedProduct.stock,
+          costPrice: updatedProduct.costPrice,
+          discountPrice: updatedProduct.discountPrice,
+          isPreorder: updatedProduct.isPreorder,
+          preorderAdvancePercent: updatedProduct.preorderAdvancePercent,
+          preorderETA: updatedProduct.preorderETA,
+        } 
       }
     );
 

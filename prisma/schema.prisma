@@ -70,13 +70,17 @@ model Product {
   description String
   price       Float
   costPrice   Float        @default(0)
+  discountPrice Float?
   categoryId  String
   category    Category     @relation(fields: [categoryId], references: [id], onDelete: Cascade)
   ageGroup    String
   images      Json         // Array of image URLs (JSON array)
   stock       Int
   benefits    String       // Bullet points or description of benefits
-  featured    Boolean      @default(false)
+  featured               Boolean      @default(false)
+  isPreorder             Boolean      @default(false)
+  preorderAdvancePercent Int          @default(50)
+  preorderETA            String?
   reviews     Review[]
   wishlist    Wishlist[]
   directSales DirectSale[]

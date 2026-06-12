@@ -29,6 +29,15 @@ export default async function Home() {
     omit: { costPrice: true },
   });
 
+  // Fetch 4 pre-order products if enabled
+  const preorderProducts = process.env.NEXT_PUBLIC_ENABLE_PREORDERS === "true"
+    ? await prisma.product.findMany({
+        where: { isPreorder: true },
+        take: 4,
+        omit: { costPrice: true },
+      })
+    : [];
+
   // Category specific mapping details
   const getCategoryDetails = (slug: string) => {
     switch (slug) {
@@ -287,6 +296,40 @@ export default async function Home() {
           </FadeIn>
         </div>
       </section>
+
+      {/* Pre-order Showcase Section */}
+      {process.env.NEXT_PUBLIC_ENABLE_PREORDERS === "true" && preorderProducts.length > 0 && (
+        <section className="py-16 bg-white border-t border-b border-slate-100">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-8 sm:mb-10">
+              <div className="max-w-2xl text-left">
+                <span className="text-amber-600 font-extrabold text-xs sm:text-sm uppercase tracking-wider">Coming Soon</span>
+                <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-brand-blue-dark tracking-tight mt-1 font-sans">
+                  Exclusive Pre-orders
+                </h2>
+                <p className="mt-2 text-slate-600 text-sm sm:text-base">
+                  Secure your items today with a 50% advance payment. Remaining COD on arrival.
+                </p>
+              </div>
+              <Link
+                href="/pre-orders"
+                className="mt-4 sm:mt-0 inline-flex items-center gap-1 text-brand-blue hover:text-brand-blue-dark font-extrabold text-sm transition-colors min-h-[44px]"
+              >
+                View All Pre-orders
+                <ChevronRight className="h-4 w-4" />
+              </Link>
+            </div>
+
+            <FadeIn>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                {preorderProducts.map((prod) => (
+                  <ProductCard key={prod.id} product={prod} />
+                ))}
+              </div>
+            </FadeIn>
+          </div>
+        </section>
+      )}
 
       {/* Shop by Category Section */}
       <section id="categories" className="py-16 bg-white">

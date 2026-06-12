@@ -508,10 +508,48 @@ Customer registration, shipping profile synchronization, self-service dashboard,
 
 ---
 
-### Phase 8: System Verification & Polish
+### Phase 8: Pre-order System & Feature Flagging
+Implementing Pre-orders with advance payment and toggleable feature flags.
+
+- [x] **TSK-026: Pre-order System & Feature Flagging**
+  - **Agent**: `fullstack-specialist`
+  - **Skills**: `clean-code`, `frontend-design`, `database-design`, `nextjs-react-expert`
+  - **Priority**: `P1`
+  - **Dependencies**: `Cart store`, `Checkout logic`, `Admin Product Management`
+  - **INPUT**: `prisma/schema.prisma`, `src/store/useCartStore.ts`, `src/app/checkout/CheckoutClient.tsx`, `src/app/admin/products/ProductManagementClient.tsx`
+  - **OUTPUT**: `prisma/schema.prisma`, `src/store/useCartStore.ts`, `src/app/checkout/CheckoutClient.tsx`, `src/app/admin/products/ProductManagementClient.tsx`, `src/app/actions/admin-products.ts`
+    - Add `isPreorder`, `preorderAdvancePercent`, and `preorderETA` fields to Prisma schema and run db sync.
+    - Implement conditional checkbox toggle for "Is Pre-order?" and input for `preorderETA` in Admin Product Creation/Edit modals.
+    - Wrap Pre-order admin options and storefront UI sections in environment check `process.env.NEXT_PUBLIC_ENABLE_PREORDERS === 'true'`.
+    - Create a Pre-order horizontal collection section on the homepage and a dedicated pre-order catalog route.
+    - Implement pre-order logic in Zustand cart store (visual 50% price discount and clear UI indicator tag).
+    - Update delivery charge logic: 0 BDT if cart contains only pre-order items; standard delivery fees for mixed or normal-only carts.
+  - **VERIFY**: `Check that when NEXT_PUBLIC_ENABLE_PREORDERS is false, preorder options do not show on frontend/admin. Set to true, verify pre-order tags, 50% cart price calculation, free shipping on all-preorder carts, and correct delivery fee calculations for mixed carts.`
+
+---
+
+### Phase 9: Strikethrough Discount Pricing
+Implementing optional discount pricing for products.
+
+- [x] **TSK-028: Strikethrough Discount Pricing**
+  - **Agent**: `fullstack-specialist`
+  - **Skills**: `clean-code`, `frontend-design`, `database-design`, `nextjs-react-expert`
+  - **Priority**: `P1`
+  - **Dependencies**: `TSK-019`, `TSK-020`
+  - **INPUT**: `prisma/schema.prisma`, `src/app/actions/admin-products.ts`, `src/app/actions/order.ts`, `src/app/admin/products/ProductManagementClient.tsx`, `src/components/ProductCard.tsx`, `src/app/product/[slug]/ProductDetailsClient.tsx`
+  - **OUTPUT**: `prisma/schema.prisma`, `src/app/actions/admin-products.ts`, `src/app/actions/order.ts`, `src/app/admin/products/ProductManagementClient.tsx`, `src/components/ProductCard.tsx`, `src/app/product/[slug]/ProductDetailsClient.tsx`
+    - Add `discountPrice` field to product schema and forms.
+    - Render crossed out regular price with "(Full Price)" next to it on storefront.
+    - Compute discount percentages dynamically for image badges.
+    - Sync cart store additions, coupon eligibility, and server-side order validations to charge the discount rate.
+  - **VERIFY**: `Confirm database push is successful. Verify that creating/updating a product with a valid discount price shows the crossed-out layout, the dynamic % off badge on cards, and that checkout calculations evaluate the discount price.`
+
+---
+
+### Phase 10: System Verification & Polish
 Linting, E2E testing, and UX audits.
 
-- [ ] **TSK-026: SEO Optimization & Metadata Integration**
+- [ ] **TSK-027: SEO Optimization & Metadata Integration**
   - **Agent**: `seo-specialist`
   - **Skills**: `seo-fundamentals`
   - **Priority**: `P3`
@@ -523,7 +561,7 @@ Linting, E2E testing, and UX audits.
     - Ensure a single `<h1>` heading layout exists on each page.
   - **VERIFY**: `Check meta-tag presence and verify search engines correctly resolve route metadata.`
 
-- [ ] **TSK-027: Checklist & Master Validations**
+- [ ] **TSK-029: Checklist & Master Validations**
   - **Agent**: `performance-optimizer`
   - **Skills**: `performance-profiling`, `webapp-testing`
   - **Priority**: `P3`

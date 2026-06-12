@@ -71,7 +71,11 @@ export async function createOrder(
         where: { id: { in: productIds } },
       });
 
-      let calculatedSubtotal = 0;
+      let preorderAdvanceSubtotal = 0;
+      let preorderRemainingSubtotal = 0;
+      let standardSubtotal = 0;
+      let hasPreorderItems = false;
+      let hasStandardItems = false;
 
       // Validate stock levels and compute subtotal using db prices
       for (const item of items) {
@@ -83,8 +87,24 @@ export async function createOrder(
           throw new Error(`INSUFFICIENT_STOCK:${dbProduct.title}:${dbProduct.stock}`);
         }
 
-        calculatedSubtotal += dbProduct.price * item.quantity;
+        const activePrice = dbProduct.discountPrice && dbProduct.discountPrice > 0 
+          ? dbProduct.discountPrice 
+          : dbProduct.price;
+
+        if (dbProduct.isPreorder) {
+          hasPreorderItems = true;
+          const advancePercent = dbProduct.preorderAdvancePercent || 50;
+          const advancePrice = activePrice * (advancePercent / 100);
+          const remainingPrice = activePrice * (1 - advancePercent / 100);
+          preorderAdvanceSubtotal += advancePrice * item.quantity;
+          preorderRemainingSubtotal += remainingPrice * item.quantity;
+        } else {
+          hasStandardItems = true;
+          standardSubtotal += activePrice * item.quantity;
+        }
       }
+
+      const calculatedSubtotal = standardSubtotal + preorderAdvanceSubtotal;
 
       // Decrement stock for all items
       for (const item of items) {
@@ -112,6 +132,11 @@ export async function createOrder(
         }
       }
 
+      // Calculate delivery charge: 0 BDT if cart contains only pre-order items. Standard rates apply if mixed or normal.
+      if (hasPreorderItems && !hasStandardItems) {
+        calculatedDeliveryCharge = 0;
+      }
+
       // Calculate discount using database coupon lookup
       let serverDiscount = 0;
       let appliedCouponCode: string | null = null;
@@ -122,8 +147,11 @@ export async function createOrder(
           where: { code: normalizedPromoCode },
         });
 
-        if (coupon && coupon.isActive && calculatedSubtotal >= coupon.minOrderAmount) {
-          serverDiscount = Math.round(calculatedSubtotal * (coupon.discountPercent / 100));
+        // Verify standard items subtotal against coupon minOrderAmount
+        // Calculate coupon percentage discount only on standard items subtotal
+        // If all items in cart are pre-orders (no standard items), disable coupon application
+        if (coupon && coupon.isActive && hasStandardItems && standardSubtotal >= coupon.minOrderAmount) {
+          serverDiscount = Math.round(standardSubtotal * (coupon.discountPercent / 100));
           appliedCouponCode = coupon.code;
         }
       }
@@ -132,20 +160,29 @@ export async function createOrder(
 
       // Hybrid split payment calculations
       let serverPaidNow = serverGrandTotal;
-      let serverDueOnDelivery = 0;
+      let serverDueOnDelivery = preorderRemainingSubtotal;
 
       if (paymentOption === "cod") {
-        serverPaidNow = calculatedDeliveryCharge;
-        serverDueOnDelivery = Math.max(0, calculatedSubtotal - serverDiscount);
+        serverPaidNow = preorderAdvanceSubtotal + calculatedDeliveryCharge;
+        serverDueOnDelivery = Math.max(0, preorderRemainingSubtotal + standardSubtotal - serverDiscount);
       }
 
-      // Map cart items into JSON-serializable array
-      const serializedItems = items.map(item => ({
-        id: item.id,
-        title: item.title,
-        price: item.price,
-        quantity: item.quantity,
-      }));
+      // Map cart items into JSON-serializable array including preorder details
+      const serializedItems = items.map(item => {
+        const dbProduct = dbProducts.find(p => p.id === item.id)!;
+        const activePrice = dbProduct.discountPrice && dbProduct.discountPrice > 0 
+          ? dbProduct.discountPrice 
+          : dbProduct.price;
+        return {
+          id: item.id,
+          title: item.title,
+          price: activePrice,
+          quantity: item.quantity,
+          isPreorder: dbProduct.isPreorder,
+          preorderAdvancePercent: dbProduct.preorderAdvancePercent,
+          preorderETA: dbProduct.preorderETA,
+        };
+      });
 
       // If customer is logged in and saveAddressToProfile (or form field saveAddress) is checked, update user profile
       if (userId && (saveAddressToProfile || saveAddress)) {

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Outfit } from "next/font/google";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import prisma from "@/lib/db";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import "./globals.css";
@@ -23,12 +24,15 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   const session = await getServerSession(authOptions);
+  const categories = await prisma.category.findMany({
+    orderBy: { name: "asc" },
+  });
 
   return (
     <html lang="en" className={`${outfit.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col font-sans bg-slate-50 text-slate-800">
         <div className="flex min-h-screen flex-col">
-          <Navbar session={session} />
+          <Navbar session={session} categories={categories} />
           <main className="flex-grow flex flex-col">{children}</main>
           <Footer />
         </div>

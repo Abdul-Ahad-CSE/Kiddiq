@@ -35,6 +35,7 @@ interface Product {
   slug: string;
   description: string;
   price: number;
+  discountPrice?: number | null;
   costPrice: number;
   categoryId: string;
   ageGroup: string;
@@ -43,6 +44,9 @@ interface Product {
   benefits: string;
   featured: boolean;
   category: Category;
+  isPreorder?: boolean;
+  preorderAdvancePercent?: number | null;
+  preorderETA?: string | null;
 }
 
 interface ProductManagementClientProps {
@@ -83,6 +87,7 @@ export default function ProductManagementClient({
     slug: "",
     description: "",
     price: 0,
+    discountPrice: null as number | null,
     costPrice: 0,
     categoryId: "",
     ageGroup: "",
@@ -90,6 +95,9 @@ export default function ProductManagementClient({
     stock: 0,
     benefits: "",
     featured: false,
+    isPreorder: false,
+    preorderAdvancePercent: 50,
+    preorderETA: "",
   });
   const [isSlugManuallyEdited, setIsSlugManuallyEdited] = useState(false);
 
@@ -125,6 +133,7 @@ export default function ProductManagementClient({
       slug: "",
       description: "",
       price: 0,
+      discountPrice: null,
       costPrice: 0,
       categoryId: categories[0]?.id || "",
       ageGroup: AGE_GROUPS[0],
@@ -132,6 +141,9 @@ export default function ProductManagementClient({
       stock: 10,
       benefits: "",
       featured: false,
+      isPreorder: false,
+      preorderAdvancePercent: 50,
+      preorderETA: "",
     });
     setIsSlugManuallyEdited(false);
     setModalMode("create");
@@ -148,6 +160,7 @@ export default function ProductManagementClient({
       slug: product.slug,
       description: product.description,
       price: product.price,
+      discountPrice: product.discountPrice ?? null,
       costPrice: product.costPrice || 0,
       categoryId: product.categoryId,
       ageGroup: product.ageGroup,
@@ -155,6 +168,9 @@ export default function ProductManagementClient({
       stock: product.stock,
       benefits: product.benefits,
       featured: product.featured,
+      isPreorder: product.isPreorder || false,
+      preorderAdvancePercent: product.preorderAdvancePercent ?? 50,
+      preorderETA: product.preorderETA || "",
     });
     setIsSlugManuallyEdited(true);
     setModalMode("edit");
@@ -188,6 +204,12 @@ export default function ProductManagementClient({
       setErrorMsg("Product price must be a positive number.");
       return;
     }
+    if (formState.discountPrice !== null && formState.discountPrice !== undefined && formState.discountPrice !== 0) {
+      if (formState.discountPrice >= formState.price) {
+        setErrorMsg("Discount price must be strictly less than the regular price.");
+        return;
+      }
+    }
     if (formState.costPrice < 0) {
       setErrorMsg("Product buyin cost cannot be negative.");
       return;
@@ -209,13 +231,18 @@ export default function ProductManagementClient({
       return;
     }
 
+    const payload = {
+      ...formState,
+      discountPrice: (formState.discountPrice === 0 || formState.discountPrice === null) ? null : formState.discountPrice,
+    };
+
     startTransition(async () => {
       let res;
       if (modalMode === "create") {
-        res = await createProduct(formState);
+        res = await createProduct(payload);
       } else {
         if (!selectedProduct) return;
-        res = await updateProduct(selectedProduct.id, formState);
+        res = await updateProduct(selectedProduct.id, payload);
       }
 
       if (res.success) {
@@ -632,6 +659,28 @@ export default function ProductManagementClient({
                   />
                 </div>
 
+                {/* Discount Price */}
+                <div className="space-y-1.5">
+                  <label htmlFor="product-discountPrice" className="text-xs font-bold text-slate-700 font-sans">
+                    Discount Price (৳ BDT)
+                  </label>
+                  <input
+                    id="product-discountPrice"
+                    type="number"
+                    placeholder="e.g. 690"
+                    value={formState.discountPrice === null || formState.discountPrice === 0 ? "" : formState.discountPrice}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setFormState((prev) => ({
+                        ...prev,
+                        discountPrice: val === "" ? null : parseFloat(val),
+                      }));
+                    }}
+                    min="0"
+                    className="w-full h-12 px-4 border border-slate-200 rounded-xl text-sm text-slate-800 placeholder-slate-400 font-sans focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+
                 {/* Wholesale Cost */}
                 <div className="space-y-1.5">
                   <label htmlFor="product-costPrice" className="text-xs font-bold text-slate-700 font-sans">
@@ -742,6 +791,60 @@ export default function ProductManagementClient({
                   required
                 />
               </div>
+
+              {/* Pre-order fields */}
+              {process.env.NEXT_PUBLIC_ENABLE_PREORDERS === "true" && (
+                <div className="space-y-4 bg-amber-50/50 p-3.5 rounded-xl border border-amber-100/50">
+                  <div className="flex items-center gap-3 min-h-[44px]">
+                    <input
+                      id="product-isPreorder"
+                      type="checkbox"
+                      checked={formState.isPreorder}
+                      onChange={(e) => setFormState((prev) => ({ ...prev, isPreorder: e.target.checked }))}
+                      className="h-6 w-6 text-blue-600 border-slate-350 rounded-md focus:ring-blue-500 shrink-0 cursor-pointer"
+                    />
+                    <label htmlFor="product-isPreorder" className="text-xs font-bold text-slate-700 cursor-pointer select-none font-sans">
+                      Is Pre-order?
+                    </label>
+                  </div>
+
+                  {formState.isPreorder && (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div className="space-y-1.5">
+                        <label htmlFor="product-preorderAdvancePercent" className="text-xs font-bold text-slate-700 font-sans">
+                          Pre-order Advance Percent (%) <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                          id="product-preorderAdvancePercent"
+                          type="number"
+                          min="1"
+                          max="100"
+                          value={formState.preorderAdvancePercent}
+                          onChange={(e) =>
+                            setFormState((prev) => ({ ...prev, preorderAdvancePercent: parseInt(e.target.value, 10) || 50 }))
+                          }
+                          className="w-full h-[44px] px-4 border border-slate-200 rounded-xl text-sm text-slate-800 bg-white placeholder-slate-400 font-sans focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          required
+                        />
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <label htmlFor="product-preorderETA" className="text-xs font-bold text-slate-700 font-sans">
+                          Pre-order ETA
+                        </label>
+                        <input
+                          id="product-preorderETA"
+                          type="text"
+                          placeholder="e.g. Late July 2026"
+                          value={formState.preorderETA}
+                          onChange={(e) => setFormState((prev) => ({ ...prev, preorderETA: e.target.value }))}
+                          className="w-full h-[44px] px-4 border border-slate-200 rounded-xl text-sm text-slate-800 bg-white placeholder-slate-400 font-sans focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* Featured toggle flag */}
               <div className="flex items-center gap-3 py-1 bg-slate-50/70 p-3.5 rounded-xl border border-slate-100">

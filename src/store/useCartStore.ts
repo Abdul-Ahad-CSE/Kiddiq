@@ -10,6 +10,9 @@ export interface CartItem {
   image: string;
   quantity: number;
   stock: number;
+  isPreorder?: boolean;
+  preorderAdvancePercent?: number;
+  preorderETA?: string | null;
 }
 
 export interface CouponState {
@@ -31,10 +34,26 @@ interface CartStore {
   applyCoupon: (coupon: CouponState | null) => void;
 }
 
+export function getCartSubtotal(items: CartItem[]): number {
+  return items.reduce((acc, item) => {
+    if (item.isPreorder) {
+      const advancePercent = item.preorderAdvancePercent ?? 50;
+      return acc + (item.price * (advancePercent / 100)) * item.quantity;
+    }
+    return acc + item.price * item.quantity;
+  }, 0);
+}
+
+export function getStandardSubtotal(items: CartItem[]): number {
+  return items
+    .filter((item) => !item.isPreorder)
+    .reduce((acc, item) => acc + item.price * item.quantity, 0);
+}
+
 function checkCouponValidity(items: CartItem[], coupon: CouponState | null): CouponState | null {
   if (!coupon) return null;
-  const subtotal = items.reduce((acc, item) => acc + item.price * item.quantity, 0);
-  if (subtotal < coupon.minOrderAmount) {
+  const standardSubtotal = getStandardSubtotal(items);
+  if (standardSubtotal < coupon.minOrderAmount) {
     return null;
   }
   return coupon;

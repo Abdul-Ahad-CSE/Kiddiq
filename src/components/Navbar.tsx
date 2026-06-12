@@ -20,9 +20,10 @@ import { useCartState } from "@/store/useCartStore";
 
 interface NavbarProps {
   session: Session | null;
+  categories?: { name: string; slug: string; }[];
 }
 
-export default function Navbar({ session }: NavbarProps) {
+export default function Navbar({ session, categories: initialCategories }: NavbarProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const pathname = usePathname();
@@ -55,11 +56,12 @@ export default function Navbar({ session }: NavbarProps) {
     return () => clearTimeout(timer);
   }, [pathname]);
 
-  const categories = [
+  const defaultCategories = [
     { name: "Educational Toys", slug: "educational-toys" },
     { name: "School Supplies", slug: "school-supplies" },
     { name: "Parenting Resources", slug: "parenting-resources" }
   ];
+  const categories = initialCategories || defaultCategories;
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-slate-100 bg-white/95 shadow-xs backdrop-blur-md">
